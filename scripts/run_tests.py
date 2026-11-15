@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT))
 
 
 def main() -> int:
-    with tempfile.TemporaryDirectory(prefix="radius-hermes-tests-") as home:
+    with tempfile.TemporaryDirectory(prefix="0xkia-tests-") as home:
         os.environ["HERMES_HOME"] = home
         os.environ["A2A_SESSION_ROOT"] = str(Path(home) / "a2a-sessions")
         os.environ["AGENT_SERVER_MOCK_DATA"] = "1"

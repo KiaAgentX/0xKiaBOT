@@ -1,29 +1,29 @@
-{{- include "hermes.validate" . }}
+{{- include "0xkia.validate" . }}
 {{- $usePvcTemplate := and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
 # A StatefulSet never runs two pods for one ordinal, which keeps the agent a
-# singleton: two gateways would answer every chat message twice, and Hermes
+# singleton: two gateways would answer every chat message twice, and 0xKia
 # state (SQLite, wallet keystore) lives on one ReadWriteOnce volume.
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "hermes.fullname" . }}
+  name: {{ include "0xkia.fullname" . }}
   labels:
-    {{- include "hermes.labels" . | nindent 4 }}
+    {{- include "0xkia.labels" . | nindent 4 }}
     app.kubernetes.io/component: agent
 spec:
   replicas: 1
-  serviceName: {{ include "hermes.fullname" . }}
+  serviceName: {{ include "0xkia.fullname" . }}
   podManagementPolicy: OrderedReady
   updateStrategy:
     type: RollingUpdate
   selector:
     matchLabels:
-      {{- include "hermes.selectorLabels" (dict "root" . "component" "agent") | nindent 6 }}
+      {{- include "0xkia.selectorLabels" (dict "root" . "component" "agent") | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "hermes.labels" . | nindent 8 }}
-        {{- include "hermes.selectorLabels" (dict "root" . "component" "agent") | nindent 8 }}
+        {{- include "0xkia.labels" . | nindent 8 }}
+        {{- include "0xkia.selectorLabels" (dict "root" . "component" "agent") | nindent 8 }}
         {{- with .Values.agent.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -36,7 +36,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      serviceAccountName: {{ include "hermes.serviceAccountName" . }}
+      serviceAccountName: {{ include "0xkia.serviceAccountName" . }}
       automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
       enableServiceLinks: false
       terminationGracePeriodSeconds: {{ .Values.agent.terminationGracePeriodSeconds }}
@@ -58,7 +58,7 @@ spec:
       {{- end }}
       containers:
         - name: agent
-          image: {{ include "hermes.image" . }}
+          image: {{ include "0xkia.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext:
             {{- toYaml .Values.agent.securityContext | nindent 12 }}
@@ -68,9 +68,9 @@ spec:
               protocol: TCP
           envFrom:
             - configMapRef:
-                name: {{ include "hermes.fullname" . }}
+                name: {{ include "0xkia.fullname" . }}
             - secretRef:
-                name: {{ include "hermes.agentSecretName" . }}
+                name: {{ include "0xkia.agentSecretName" . }}
             {{- with .Values.agent.extraEnvFrom }}
             {{- tpl (toYaml .) $ | nindent 12 }}
             {{- end }}
@@ -138,7 +138,7 @@ spec:
     - metadata:
         name: data
         labels:
-          {{- include "hermes.selectorLabels" (dict "root" . "component" "agent") | nindent 10 }}
+          {{- include "0xkia.selectorLabels" (dict "root" . "component" "agent") | nindent 10 }}
         {{- with .Values.persistence.annotations }}
         annotations:
           {{- toYaml . | nindent 10 }}

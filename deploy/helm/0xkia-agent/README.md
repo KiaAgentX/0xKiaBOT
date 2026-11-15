@@ -1,4 +1,4 @@
-# hermes-agent Helm chart
+# 0xkia-agent Helm chart
 
 Runs this template on any Kubernetes cluster (1.25+) with core objects only:
 a single-replica StatefulSet with a persistent `/data` volume, a Service, a
@@ -12,31 +12,31 @@ It runs the same image and entrypoint as Railway. Railway Variables become
 ## Quick start
 
 ```sh
-kubectl create namespace hermes
-kubectl -n hermes create secret generic hermes-agent \
+kubectl create namespace 0xkia
+kubectl -n 0xkia create secret generic 0xkia-agent \
   --from-literal=OPENROUTER_API_KEY=sk-or-v1-... \
   --from-literal=TELEGRAM_BOT_TOKEN=123456:...
-helm install hermes deploy/helm/hermes-agent -n hermes \
-  -f deploy/helm/hermes-agent/examples/minimal.yaml \
-  --set image.repository=<registry>/radius-hermes --set image.tag=<tag>
-helm test hermes -n hermes
+helm install 0xkia deploy/helm/0xkia-agent -n 0xkia \
+  -f deploy/helm/0xkia-agent/examples/minimal.yaml \
+  --set image.repository=<registry>/0xkia-bot --set image.tag=<tag>
+helm test 0xkia -n 0xkia
 ```
 
 The image isn't published to a registry yet. Build it from the repository root
-(`docker build -t <registry>/radius-hermes:<tag> .`) and push it, or load it
+(`docker build -t <registry>/0xkia-bot:<tag> .`) and push it, or load it
 into a local cluster (`kind load docker-image ...`).
 
 The entrypoint validates the Secret on boot, as on Railway: you need a provider
 (`OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, or `OPENAI_API_KEY` plus
 `OPENAI_BASE_URL`) and at least one platform (Telegram, Discord, or both Slack
-tokens). Watch the logs with `kubectl -n hermes logs -f statefulset/hermes-hermes-agent`.
+tokens). Watch the logs with `kubectl -n 0xkia logs -f statefulset/0xkia-0xkia-agent`.
 
 ## What it deploys
 
 | Object | Notes |
 |---|---|
 | StatefulSet, 1 replica | The agent and its chat gateway. Never scale it: two gateways answer every message twice, and the state lives on one ReadWriteOnce volume. The schema rejects a replica count. |
-| PVC `data` → `/data` | Hermes state, wallet keystore, skills, workspace. Kept when the release is deleted. |
+| PVC `data` → `/data` | 0xKia state, wallet keystore, skills, workspace. Kept when the release is deleted. |
 | Service `:3000` | Discovery (`/.well-known/*`), `/a2a`, `/token`, homepage |
 | ConfigMap | `agent.config` plus chart-managed `PORT`, `PUBLIC_URL` and egress wiring. Empty values are dropped. |
 | ServiceAccount | Token not mounted. Add workload-identity annotations here. |
@@ -76,7 +76,7 @@ See [values.yaml](values.yaml) for every key. The ones you'll set most:
 end up in the Helm release history.
 
 A changed Secret or ConfigMap from outside the chart doesn't restart pods. Run
-`kubectl rollout restart statefulset/<release>-hermes-agent`, or use a
+`kubectl rollout restart statefulset/<release>-0xkia-agent`, or use a
 controller such as Reloader. Changes made through the chart's own values roll
 the pods automatically.
 
@@ -85,10 +85,10 @@ the pods automatically.
 ```yaml
 egress:
   enabled: true
-  existingSecret: hermes-egress      # EGRESS_TOKEN_SEED, EGRESS_CA_CERT, EGRESS_CA_KEY + real keys
+  existingSecret: 0xkia-egress      # EGRESS_TOKEN_SEED, EGRESS_CA_CERT, EGRESS_CA_KEY + real keys
   secrets: [OPENROUTER_API_KEY, TELEGRAM_BOT_TOKEN]
 agent:
-  existingSecret: hermes-agent       # EGRESS_TOKEN_SEED, EGRESS_CA_CERT, no real keys
+  existingSecret: 0xkia-agent       # EGRESS_TOKEN_SEED, EGRESS_CA_CERT, no real keys
 ```
 
 Generate the CA and seed with `python3 scripts/egress/iron_egress.py gen-ca`. The
@@ -120,7 +120,7 @@ instead. Each row needs values only, not a fork:
 | Vault Agent, sidecars | `agent.podAnnotations`, `agent.extraContainers`, `agent.extraVolumes`/`extraVolumeMounts` | Annotation-based injectors |
 | Cloud identity | `serviceAccount.annotations` | `iam.gke.io/gcp-service-account`, `eks.amazonaws.com/role-arn`, `azure.workload.identity/client-id` |
 | TLS, WAF, rate limits | `ingress.className`, `ingress.annotations` | cert-manager or controller annotations |
-| Gateway API | `extraObjects` | An `HTTPRoute` pointing at the `<release>-hermes-agent` Service, port 3000 |
+| Gateway API | `extraObjects` | An `HTTPRoute` pointing at the `<release>-0xkia-agent` Service, port 3000 |
 | Stricter egress | `networkPolicy.extraAgentEgress`, `extraObjects` | CIDR rules, Cilium or Calico FQDN policies |
 | Sandboxing | `agent.runtimeClassName`, `nodeSelector`, `tolerations` | `gvisor`, `kata` |
 | Backups | `persistence.storageClass`, `persistence.annotations`, `extraObjects` | Encrypted StorageClass, Velero, `VolumeSnapshot` |
@@ -129,7 +129,7 @@ instead. Each row needs values only, not a fork:
 
 ## Moving from Railway
 
-1. Copy `/data` from the Railway service (for example `tar` over `railway ssh`) into the PVC. One way is to install with `persistence.existingClaim` pointing at a PVC you've restored. The wallet keystore under `/data/.hermes/.radius-cli` is the agent's on-chain identity, so copy it intact. Files owned by root are fine: `fsGroupChangePolicy: OnRootMismatch` hands them to gid 10001 on first mount, where the storage driver supports `fsGroup`. Otherwise `chown -R 10001:10001` them before mounting.
+1. Copy `/data` from the Railway service (for example `tar` over `railway ssh`) into the PVC. One way is to install with `persistence.existingClaim` pointing at a PVC you've restored. The wallet keystore under `/data/.0xkia/.radius-cli` is the agent's on-chain identity, so copy it intact. Files owned by root are fine: `fsGroupChangePolicy: OnRootMismatch` hands them to gid 10001 on first mount, where the storage driver supports `fsGroup`. Otherwise `chown -R 10001:10001` them before mounting.
 2. Keep the same public domain. The `did:web` identity is derived from `PUBLIC_URL`, and peers trust that DID through `TRUSTED_DIDS`.
 3. Move Railway Variables: credentials into the Secret, everything else into `agent.config`. Don't set `PORT`, `PUBLIC_URL`, `EGRESS_PROXY_URL` or `EGRESS_SECRETS`, because the chart manages them.
 4. Stop the Railway service before starting the chart, so two gateways never run at once.

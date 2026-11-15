@@ -97,7 +97,7 @@ def _exchange_api_key_for_token(base_url: str, api_key: str, subject: str) -> st
 
 
 def _internal_api_key() -> str:
-    return str(os.environ.get("HERMES_API_KEY") or os.environ.get("API_SERVER_KEY") or "").strip()
+    return str(os.environ.get("KIA_API_KEY") or os.environ.get("HERMES_API_KEY") or os.environ.get("API_SERVER_KEY") or "").strip()
 
 
 def _internal_base_url() -> str:
@@ -197,7 +197,7 @@ def register(ctx):
                 },
                 "subject": {
                     "type": "string",
-                    "description": "Optional subject for /token exchange. Defaults to hermes.",
+                    "description": "Optional subject for /token exchange. Defaults to 0xkia.",
                 },
                 "session_id": {
                     "type": "string",
@@ -249,7 +249,7 @@ def register(ctx):
         try:
             base_url = _normalize_target(params.get("agent"))
             api_key = str(params.get("api_key") or os.environ.get("A2A_PEER_API_KEY", "")).strip()
-            subject = str(params.get("subject") or "hermes").strip() or "hermes"
+            subject = str(params.get("subject") or "0xkia").strip() or "0xkia"
             rpc_id = str(uuid.uuid4())
             message_id = str(uuid.uuid4())
             auto_continue = bool(params.get("auto_continue"))

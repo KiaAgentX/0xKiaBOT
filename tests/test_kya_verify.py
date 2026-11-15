@@ -80,10 +80,10 @@ class KyaMintTests(unittest.TestCase):
     def test_mint_kya_round_trip_verifies(self):
         out = kya_verify.mint_token(
             token_type="kya",
-            issuer="https://hermes.example",
-            subject="did:web:hermes.example",
+            issuer="https://kia.example",
+            subject="did:web:kia.example",
             audience="https://peer.example",
-            aid={"name": "Hermes Agent", "creation_ip": "8.8.8.8"},
+            aid={"name": "0xKia Agent", "creation_ip": "8.8.8.8"},
             env="production",
         )
         report = kya_verify.verify_token(
@@ -98,15 +98,15 @@ class KyaMintTests(unittest.TestCase):
         )
         self.assertTrue(report.ok, msg=report.to_dict())
         self.assertTrue(report.signature_verified)
-        self.assertEqual(report.issuer, "https://hermes.example")
+        self.assertEqual(report.issuer, "https://kia.example")
         self.assertEqual(report.errors, [])
 
     def test_mint_rejects_invalid_aid_creation_ip(self):
         with self.assertRaises(ValueError) as cm:
             kya_verify.mint_token(
                 token_type="kya",
-                issuer="https://hermes.example",
-                subject="did:web:hermes.example",
+                issuer="https://kia.example",
+                subject="did:web:kia.example",
                 audience="https://peer.example",
                 aid={"name": "x", "creation_ip": "10.0.0.1"},
             )
@@ -116,8 +116,8 @@ class KyaMintTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             kya_verify.mint_token(
                 token_type="kya",
-                issuer="https://hermes.example",
-                subject="did:web:hermes.example",
+                issuer="https://kia.example",
+                subject="did:web:kia.example",
                 audience="https://peer.example",
                 aid=None,
             )
@@ -126,8 +126,8 @@ class KyaMintTests(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             kya_verify.mint_token(
                 token_type="kya",
-                issuer="https://hermes.example",
-                subject="did:web:hermes.example",
+                issuer="https://kia.example",
+                subject="did:web:kia.example",
                 audience="https://peer.example",
                 aid={"name": "x", "creation_ip": "8.8.8.8"},
                 extra_claims={"aud": "attacker"},
@@ -138,8 +138,8 @@ class KyaMintTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             kya_verify.mint_token(
                 token_type="kya-pay",
-                issuer="https://hermes.example",
-                subject="did:web:hermes.example",
+                issuer="https://kia.example",
+                subject="did:web:kia.example",
                 audience="https://peer.example",
                 aid={"name": "x", "creation_ip": "8.8.8.8"},
                 pay=None,
@@ -148,10 +148,10 @@ class KyaMintTests(unittest.TestCase):
     def test_mint_kya_pay_round_trip(self):
         out = kya_verify.mint_token(
             token_type="kya-pay",
-            issuer="https://hermes.example",
-            subject="did:web:hermes.example",
+            issuer="https://kia.example",
+            subject="did:web:kia.example",
             audience="https://peer.example",
-            aid={"name": "Hermes", "creation_ip": "8.8.8.8"},
+            aid={"name": "0xKia", "creation_ip": "8.8.8.8"},
             pay={"amt": "1.50", "cur": "USD", "stp": "coin", "sti": {"chain": "radius"}},
         )
         self.assertEqual(out["header"]["typ"], "kya-pay+jwt")
@@ -186,16 +186,16 @@ class KyaMintTests(unittest.TestCase):
     def test_evaluate_inbound_accepts_minted_token(self):
         out = kya_verify.mint_token(
             token_type="kya",
-            issuer="https://hermes.example",
-            subject="did:web:hermes.example",
+            issuer="https://kia.example",
+            subject="did:web:kia.example",
             audience="https://peer.example",
-            aid={"name": "Hermes", "creation_ip": "8.8.8.8"},
+            aid={"name": "0xKia", "creation_ip": "8.8.8.8"},
         )
         with patch.object(kya_verify, "_http_get_json", return_value=kya_verify.get_kya_jwks()):
             decision = kya_verify.evaluate_inbound(
                 token=out["token"],
                 policy="required",
-                trusted_issuers={"https://hermes.example"},
+                trusted_issuers={"https://kia.example"},
                 expected_audience="https://peer.example",
             )
         self.assertEqual(decision["action"], "accept", msg=decision)
@@ -204,10 +204,10 @@ class KyaMintTests(unittest.TestCase):
     def test_evaluate_inbound_required_rejects_tampered_token(self):
         out = kya_verify.mint_token(
             token_type="kya",
-            issuer="https://hermes.example",
-            subject="did:web:hermes.example",
+            issuer="https://kia.example",
+            subject="did:web:kia.example",
             audience="https://peer.example",
-            aid={"name": "Hermes", "creation_ip": "8.8.8.8"},
+            aid={"name": "0xKia", "creation_ip": "8.8.8.8"},
         )
         header_b64, payload_b64, sig = out["token"].split(".")
         decoded = json.loads(
@@ -224,7 +224,7 @@ class KyaMintTests(unittest.TestCase):
             decision = kya_verify.evaluate_inbound(
                 token=tampered,
                 policy="required",
-                trusted_issuers={"https://hermes.example"},
+                trusted_issuers={"https://kia.example"},
                 expected_audience="https://attacker.example",
             )
         self.assertEqual(decision["action"], "reject")
@@ -234,7 +234,7 @@ class KyaMintTests(unittest.TestCase):
             decision = kya_verify.evaluate_inbound(
                 token="not.a.realtoken",
                 policy="opportunistic",
-                trusted_issuers={"https://hermes.example"},
+                trusted_issuers={"https://kia.example"},
                 expected_audience="https://peer.example",
             )
         self.assertEqual(decision["action"], "warn")
@@ -306,8 +306,8 @@ class KyaMintTests(unittest.TestCase):
 
     def _mint_for_peer(self, token_type="kya"):
         return kya_verify.mint_token(
-            token_type=token_type, issuer="https://hermes.example", subject="did:web:hermes.example",
-            audience="https://peer.example", aid={"name": "Hermes", "creation_ip": "8.8.8.8"},
+            token_type=token_type, issuer="https://kia.example", subject="did:web:kia.example",
+            audience="https://peer.example", aid={"name": "0xKia", "creation_ip": "8.8.8.8"},
             pay={"amt": "1.50", "cur": "USD"} if token_type == "kya-pay" else None,
         )
 
@@ -331,9 +331,9 @@ class KyaMintTests(unittest.TestCase):
         token = self._mint_for_peer("kya-pay")["token"]
         with patch.object(kya_verify, "_http_get_json", return_value=kya_verify.get_kya_jwks()):
             first = kya_verify.evaluate_inbound(token=token, policy="required", expected_audience="https://peer.example",
-                trusted_issuers={"https://hermes.example"})
+                trusted_issuers={"https://kia.example"})
             second = kya_verify.evaluate_inbound(token=token, policy="required", expected_audience="https://peer.example",
-                trusted_issuers={"https://hermes.example"})
+                trusted_issuers={"https://kia.example"})
         self.assertEqual(first["action"], "accept", first)
         self.assertEqual(second["action"], "reject", second)
         self.assertTrue(any("Replay" in e for e in second["report"].errors))

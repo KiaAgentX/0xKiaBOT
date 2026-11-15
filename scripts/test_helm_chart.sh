@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# End-to-end check of deploy/helm/hermes-agent on a local Kubernetes cluster.
+# End-to-end check of deploy/helm/0xkia-agent on a local Kubernetes cluster.
 #
 #   scripts/test_helm_chart.sh                     # build image, create kind cluster, test, clean up
-#   BUILD=false IMAGE=radius-hermes:ci scripts/test_helm_chart.sh   # reuse an image
+#   BUILD=false IMAGE=0xkia-bot:ci scripts/test_helm_chart.sh   # reuse an image
 #   CLUSTER=current scripts/test_helm_chart.sh     # use the current kubectl context
 #   KEEP=true scripts/test_helm_chart.sh           # leave the release (and kind cluster) running
 #
@@ -14,16 +14,16 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-IMAGE="${IMAGE:-radius-hermes:chart-test}"
+IMAGE="${IMAGE:-0xkia-bot:chart-test}"
 BUILD="${BUILD:-true}"
 CLUSTER="${CLUSTER:-kind}"            # kind | current
-KIND_NAME="${KIND_NAME:-hermes-chart}"
-NS="${NAMESPACE:-hermes-chart-test}"
-RELEASE="${RELEASE:-hermes}"
+KIND_NAME="${KIND_NAME:-0xkia-chart}"
+NS="${NAMESPACE:-0xkia-chart-test}"
+RELEASE="${RELEASE:-0xkia}"
 KEEP="${KEEP:-false}"
 TIMEOUT="${TIMEOUT:-10m}"
 CHECK_NETWORK_POLICY="${CHECK_NETWORK_POLICY:-true}"
-CHART=deploy/helm/hermes-agent
+CHART=deploy/helm/0xkia-agent
 
 log() { printf '\n[chart-test] %s\n' "$*"; }
 fail() { printf '\n[chart-test] FAIL: %s\n' "$*" >&2; exit 1; }
@@ -41,8 +41,8 @@ cleanup() {
     log "Diagnostics"
     kubectl -n "$NS" get pods,pvc,svc,networkpolicy -o wide 2>/dev/null || true
     kubectl -n "$NS" describe pods 2>/dev/null | tail -60 || true
-    kubectl -n "$NS" logs "statefulset/${RELEASE}-hermes-agent" --tail=120 2>/dev/null || true
-    kubectl -n "$NS" logs "deployment/${RELEASE}-hermes-agent-egress" --tail=40 2>/dev/null || true
+    kubectl -n "$NS" logs "statefulset/${RELEASE}-0xkia-agent" --tail=120 2>/dev/null || true
+    kubectl -n "$NS" logs "deployment/${RELEASE}-0xkia-agent-egress" --tail=40 2>/dev/null || true
   fi
   if [[ "$KEEP" != "true" ]]; then
     helm uninstall "$RELEASE" -n "$NS" >/dev/null 2>&1 || true
@@ -105,11 +105,11 @@ data = json.loads((work / "ca.json").read_text())
 (work / "ca.key").write_text(data["key"] + "\n")
 PY
   log "Creating Secrets"
-  kubectl -n "$NS" create secret generic hermes-agent \
+  kubectl -n "$NS" create secret generic 0xkia-agent \
     --from-file=EGRESS_TOKEN_SEED="$work/seed" \
     --from-file=EGRESS_CA_CERT="$work/ca.crt" \
     --from-literal=JWT_API_KEY=chart-test-api-key >/dev/null
-  kubectl -n "$NS" create secret generic hermes-egress \
+  kubectl -n "$NS" create secret generic 0xkia-egress \
     --from-file=EGRESS_TOKEN_SEED="$work/seed" \
     --from-file=EGRESS_CA_CERT="$work/ca.crt" \
     --from-file=EGRESS_CA_KEY="$work/ca.key" \
@@ -119,7 +119,7 @@ PY
 
 # Reruns with KEEP=true reuse the Secrets: a new CA would not reach pods that
 # are already running, because editing a Secret does not restart them.
-if ! kubectl -n "$NS" get secret hermes-agent hermes-egress >/dev/null 2>&1; then
+if ! kubectl -n "$NS" get secret 0xkia-agent 0xkia-egress >/dev/null 2>&1; then
   create_secrets
 fi
 
@@ -136,7 +136,7 @@ helm upgrade --install "$RELEASE" "$CHART" -n "$NS" --wait --timeout "$TIMEOUT" 
   --set agent.config.TELEGRAM_ALLOWED_USERS=1 \
   --set agent.config.RADIUS_AUTO_FUND=false
 
-AGENT="${RELEASE}-hermes-agent-0"
+AGENT="${RELEASE}-0xkia-agent-0"
 agent_exec() { kubectl -n "$NS" exec "$AGENT" -c agent -- "$@"; }
 
 log "helm test (in-cluster discovery check)"
@@ -146,11 +146,11 @@ log "Checking the agent runs non-root with a read-only root filesystem"
 uid="$(agent_exec id -u)"
 [[ "$uid" == "10001" ]] || fail "agent runs as uid $uid, expected 10001"
 if agent_exec touch /app/chart-test-write 2>/dev/null; then fail "root filesystem is writable"; fi
-agent_exec test -w /data/.hermes || fail "/data is not writable by the agent"
+agent_exec test -w /data/.0xkia || fail "/data is not writable by the agent"
 
 log "Checking the agent holds proxy tokens, not the real provider key"
-envfile="$(agent_exec cat /data/.hermes/.env)"
-grep -q '^OPENROUTER_API_KEY=sk-or-v1-hermes-egress-' <<<"$envfile" || fail "agent .env lacks the egress proxy token"
+envfile="$(agent_exec cat /data/.0xkia/.env)"
+grep -q '^OPENROUTER_API_KEY=sk-or-v1-0xkia-egress-' <<<"$envfile" || fail "agent .env lacks the egress proxy token"
 if grep -q "$FAKE_PROVIDER_KEY" <<<"$envfile"; then fail "real provider key reached the agent"; fi
 agent_exec python3 -c "
 import os, socket
@@ -160,7 +160,7 @@ socket.create_connection((u.hostname, u.port), timeout=5).close()
 " || fail "agent cannot reach the egress proxy"
 # Without the proxy token, iron-proxy refuses a secret's own host with 403. Getting
 # that status proves the agent trusts the egress CA (TLS is intercepted).
-code="$(agent_exec sh -c 'curl -sS -o /dev/null -w "%{http_code}" --cacert /data/.hermes/egress/ca-bundle.crt -x "$EGRESS_PROXY_URL" https://openrouter.ai/api/v1/models')" \
+code="$(agent_exec sh -c 'curl -sS -o /dev/null -w "%{http_code}" --cacert /data/.0xkia/egress/ca-bundle.crt -x "$EGRESS_PROXY_URL" https://openrouter.ai/api/v1/models')" \
   || fail "TLS through the egress proxy failed (CA not trusted?)"
 [[ "$code" == "403" ]] || fail "expected the proxy to refuse an untokened request with 403, got $code"
 
@@ -180,13 +180,13 @@ fi
 
 log "Checking the wallet and identity survive a pod restart (persistent /data)"
 did_doc() { agent_exec curl -fsS "http://127.0.0.1:3000/.well-known/did.json"; }
-wallet_before="$(agent_exec cat /data/.hermes/.radius-cli/address)"
+wallet_before="$(agent_exec cat /data/.0xkia/.radius-cli/address)"
 [[ "$wallet_before" =~ ^0x[0-9a-fA-F]{40}$ ]] || fail "radius-cli wallet was not created: '$wallet_before'"
 did_before="$(did_doc)"
 kubectl -n "$NS" delete pod "$AGENT" --wait=true >/dev/null
-kubectl -n "$NS" rollout status "statefulset/${RELEASE}-hermes-agent" --timeout "$TIMEOUT"
+kubectl -n "$NS" rollout status "statefulset/${RELEASE}-0xkia-agent" --timeout "$TIMEOUT"
 kubectl -n "$NS" wait --for=condition=Ready "pod/$AGENT" --timeout "$TIMEOUT" >/dev/null
-wallet_after="$(agent_exec cat /data/.hermes/.radius-cli/address)"
+wallet_after="$(agent_exec cat /data/.0xkia/.radius-cli/address)"
 did_after="$(did_doc)"
 [[ "$wallet_before" == "$wallet_after" ]] || fail "wallet changed across restart: $wallet_before -> $wallet_after"
 [[ "$did_before" == "$did_after" ]] || fail "DID document (keys) changed across restart"

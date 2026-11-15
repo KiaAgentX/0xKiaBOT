@@ -139,7 +139,7 @@ def _capabilities_payload() -> dict[str, Any]:
     return {
         "godaddy_mcp": {
             "purpose": "GoDaddy-hosted domain and registrar workflows exposed by the remote MCP server.",
-            "configured_by": "mcp_servers.godaddy in Hermes config.yaml",
+            "configured_by": "mcp_servers.godaddy in 0xKia config.yaml",
             "default_url": "https://api.godaddy.com/v1/domains/mcp",
             "use_for": [
                 "domain availability checks",
@@ -452,7 +452,7 @@ def register(ctx):
         },
         "godaddy_ans_include_a2a": {
             "type": "boolean",
-            "description": "Whether to include the Hermes A2A endpoint in the generated ANS payload.",
+            "description": "Whether to include the 0xKia A2A endpoint in the generated ANS payload.",
         },
         "godaddy_ans_include_mcp": {
             "type": "boolean",
@@ -481,7 +481,7 @@ def register(ctx):
         ),
         (
             "godaddy_ans_prepare_registration",
-            "Generate Swagger-aligned GoDaddy ANS registration artifacts for this Hermes agent. This writes CSR and payload files under HERMES_HOME and returns the payload plus file paths without calling the ANS API. The payload uses required fields agentDisplayName, identityCsrPEM, version, agentHost, and endpoints; CSR fields are base64-encoded PEM strings as specified; functions are nested under endpoints; both CSRs include DNS and URI SANs in the format ans://v<version>.<agentHost>.",
+            "Generate Swagger-aligned GoDaddy ANS registration artifacts for this 0xKia agent. This writes CSR and payload files under HERMES_HOME and returns the payload plus file paths without calling the ANS API. The payload uses required fields agentDisplayName, identityCsrPEM, version, agentHost, and endpoints; CSR fields are base64-encoded PEM strings as specified; functions are nested under endpoints; both CSRs include DNS and URI SANs in the format ans://v<version>.<agentHost>.",
             override_properties,
             godaddy_ans_prepare_registration,
         ),

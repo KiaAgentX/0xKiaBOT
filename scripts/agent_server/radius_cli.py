@@ -21,8 +21,8 @@ DEFAULT_NETWORK = "testnet"
 
 
 def radius_home() -> Path:
-    hermes_home = os.environ.get("HERMES_HOME", "/data/.hermes")
-    return Path(os.environ.get("RADIUS_HOME", str(Path(hermes_home) / ".radius-cli")))
+    kia_home = os.environ.get("HERMES_HOME", "/data/.0xkia")
+    return Path(os.environ.get("RADIUS_HOME", str(Path(kia_home) / ".radius-cli")))
 
 
 def radius_cli_cmd() -> list[str]:

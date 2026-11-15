@@ -3,14 +3,14 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ include "hermes.fullname" . }}
+  name: {{ include "0xkia.fullname" . }}
   labels:
-    {{- include "hermes.labels" . | nindent 4 }}
+    {{- include "0xkia.labels" . | nindent 4 }}
     app.kubernetes.io/component: agent
 spec:
   podSelector:
     matchLabels:
-      {{- include "hermes.selectorLabels" (dict "root" . "component" "agent") | nindent 6 }}
+      {{- include "0xkia.selectorLabels" (dict "root" . "component" "agent") | nindent 6 }}
   policyTypes: [Ingress, Egress]
   ingress:
     - ports:
@@ -20,21 +20,21 @@ spec:
         {{- toYaml . | nindent 8 }}
         - podSelector:
             matchLabels:
-              {{- include "hermes.selectorLabels" (dict "root" $ "component" "test") | nindent 14 }}
+              {{- include "0xkia.selectorLabels" (dict "root" $ "component" "test") | nindent 14 }}
       {{- end }}
   egress:
-    {{- include "hermes.np.dns" $np | nindent 4 }}
+    {{- include "0xkia.np.dns" $np | nindent 4 }}
     {{- if .Values.egress.enabled }}
     - to:
         - podSelector:
             matchLabels:
-              {{- include "hermes.selectorLabels" (dict "root" . "component" "egress") | nindent 14 }}
+              {{- include "0xkia.selectorLabels" (dict "root" . "component" "egress") | nindent 14 }}
       ports:
         - { protocol: TCP, port: {{ .Values.egress.port }} }
         - { protocol: TCP, port: {{ add1 .Values.egress.port }} }
     {{- end }}
     {{- if $np.agentDirectEgress }}
-    {{- include "hermes.np.internet" $np | nindent 4 }}
+    {{- include "0xkia.np.internet" $np | nindent 4 }}
     {{- end }}
     {{- with $np.extraAgentEgress }}
     {{- toYaml . | nindent 4 }}
@@ -44,26 +44,26 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ include "hermes.egressName" . }}
+  name: {{ include "0xkia.egressName" . }}
   labels:
-    {{- include "hermes.labels" . | nindent 4 }}
+    {{- include "0xkia.labels" . | nindent 4 }}
     app.kubernetes.io/component: egress
 spec:
   podSelector:
     matchLabels:
-      {{- include "hermes.selectorLabels" (dict "root" . "component" "egress") | nindent 6 }}
+      {{- include "0xkia.selectorLabels" (dict "root" . "component" "egress") | nindent 6 }}
   policyTypes: [Ingress, Egress]
   ingress:
     - from:
         - podSelector:
             matchLabels:
-              {{- include "hermes.selectorLabels" (dict "root" . "component" "agent") | nindent 14 }}
+              {{- include "0xkia.selectorLabels" (dict "root" . "component" "agent") | nindent 14 }}
       ports:
         - { protocol: TCP, port: {{ .Values.egress.port }} }
         - { protocol: TCP, port: {{ add1 .Values.egress.port }} }
   egress:
-    {{- include "hermes.np.dns" $np | nindent 4 }}
-    {{- include "hermes.np.internet" $np | nindent 4 }}
+    {{- include "0xkia.np.dns" $np | nindent 4 }}
+    {{- include "0xkia.np.internet" $np | nindent 4 }}
     {{- with $np.extraEgressProxyEgress }}
     {{- toYaml . | nindent 4 }}
     {{- end }}

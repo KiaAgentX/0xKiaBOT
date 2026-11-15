@@ -161,7 +161,7 @@ def _http_get_json(url: str, timeout: int = DEFAULT_HTTP_TIMEOUT) -> dict[str, A
 
     connection = PinnedHTTPSConnection(parsed.hostname, timeout=timeout, context=ssl.create_default_context())
     try:
-        connection.request("GET", parsed.path or "/", headers={"Accept": "application/json", "User-Agent": "hermes-kya"})
+        connection.request("GET", parsed.path or "/", headers={"Accept": "application/json", "User-Agent": "0xkia-kya"})
         response = connection.getresponse()
         if response.status != 200:
             raise ValueError("JWKS endpoint did not return HTTP 200; redirects are disabled")
@@ -562,7 +562,7 @@ _KYA_PRIVATE_KEY = None  # cryptography.hazmat.primitives.asymmetric.ec.Elliptic
 
 
 def _kya_key_dir() -> Path:
-    base = os.environ.get("HERMES_HOME") or "/data/.hermes"
+    base = os.environ.get("HERMES_HOME") or "/data/.0xkia"
     return Path(base) / ".radius" / "kya"
 
 

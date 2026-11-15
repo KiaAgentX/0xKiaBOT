@@ -66,7 +66,7 @@ class A2AX402Tests(unittest.TestCase):
             "A2A_X402_ENABLED": "true",
             "A2A_PRICE_SBC": "0.001",
             "RADIUS_WALLET_ADDRESS": WALLET,
-            "HERMES_API_KEY": "test-key",
+            "KIA_API_KEY": "test-key",
             "A2A_AUTH_MODE": "did_only",
         })
         self.env.start()
@@ -267,7 +267,7 @@ class A2AX402Tests(unittest.TestCase):
 
     def test_backend_failure_preserves_settlement_receipt(self):
         offer = self._challenge()["accepts"][0]
-        with patch.object(self.bridge, "handle_send", AsyncMock(side_effect=self.main.HermesUpstreamError("backend failed"))):
+        with patch.object(self.bridge, "handle_send", AsyncMock(side_effect=self.main.KiaUpstreamError("backend failed"))):
             response = self.client.post("/a2a", json=SEND, headers={"PAYMENT-SIGNATURE": self._payment(offer)})
         self.assertEqual(response.status_code, 502)
         self.assertIn("error", response.json())

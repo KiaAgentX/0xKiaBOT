@@ -24,9 +24,9 @@ def hermes_dependency_overrides() -> dict:
     root = Path("/opt/hermes-agent")
     manifest = json.loads((root / ".radius-dependency-overrides.json").read_text())
     if hashlib.sha256((root / manifest["source_file"]).read_bytes()).hexdigest() != manifest["after_sha256"]:
-        raise SystemExit("Hermes dependency source changed after applying the recorded compatibility overlay")
+        raise SystemExit("hermes-agent dependency source changed after applying the recorded compatibility overlay")
     if hashlib.sha256((root / manifest["patch_file"]).read_bytes()).hexdigest() != manifest["patch_sha256"]:
-        raise SystemExit("Hermes dependency patch differs from its recorded hash")
+        raise SystemExit("hermes-agent dependency patch differs from its recorded hash")
     return manifest
 
 

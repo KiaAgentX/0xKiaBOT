@@ -128,7 +128,7 @@ if [[ "${MISSING:-false}" == "true" ]]; then
 fi
 
 if [[ "$RESET_STATE" == "true" ]]; then
-  warn "--reset-state will delete persisted Hermes state before deploy:"
+  warn "--reset-state will delete persisted 0xKia state before deploy:"
   echo "  • /data/.hermes"
   echo "  • /data/workspace"
   echo "  • /data/.claude"

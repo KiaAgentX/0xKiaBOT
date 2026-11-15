@@ -214,7 +214,7 @@ class FakeCtx:
 
 
 class RegisterTests(Base):
-    def test_register_wires_slack_and_tolerates_older_hermes(self):
+    def test_register_wires_slack_and_tolerates_older_runtime(self):
         ctx = FakeCtx()
         fb.register(ctx)
         self.assertEqual(ctx.platform_handlers, [("slack", fb.wire_slack)])
@@ -399,7 +399,7 @@ class SlackMiddlewareTests(Base):
                             process_before_response=True)
         self.core_clicks = []
 
-        async def core_feedback(ack, body, action):  # what Hermes registers today
+        async def core_feedback(ack, body, action):  # what the runtime registers today
             await ack()
             self.core_clicks.append(action["value"])
 
@@ -449,25 +449,25 @@ class SlackMiddlewareTests(Base):
         self.assertFalse(self.path.exists())
 
 
-class PinnedHermesContractTests(Base):
-    """Runs only where the pinned Hermes is importable (the image, or a dev venv with it installed)."""
+class PinnedUpstreamContractTests(Base):
+    """Runs only where the pinned upstream runtime is importable (the image, or a dev venv with it installed)."""
 
     def setUp(self):
         super().setUp()
         try:
             from plugins.platforms.slack import adapter
-            import hermes_cli.plugins as hermes_plugins
+            import hermes_cli.plugins as upstream_plugins
             from slack_bolt.request.async_request import AsyncBoltRequest
         except Exception as err:  # pragma: no cover - depends on the environment
-            self.skipTest(f"pinned Hermes is not importable: {err}")
-        self.adapter_mod, self.hermes_plugins, self.AsyncBoltRequest = adapter, hermes_plugins, AsyncBoltRequest
+            self.skipTest(f"pinned upstream runtime is not importable: {err}")
+        self.adapter_mod, self.upstream_plugins, self.AsyncBoltRequest = adapter, upstream_plugins, AsyncBoltRequest
 
     def test_feedback_block_and_plugin_api_contract(self):
         block = self.adapter_mod.SlackAdapter._feedback_block(None)
         element = block["elements"][0]
         self.assertEqual((element["type"], element["action_id"]), ("feedback_buttons", fb.FEEDBACK_ACTION_ID))
         self.assertEqual({element["positive_button"]["value"], element["negative_button"]["value"]}, set(fb.RATINGS))
-        self.assertTrue(callable(getattr(self.hermes_plugins.PluginContext, "register_platform_handler", None)))
+        self.assertTrue(callable(getattr(self.upstream_plugins.PluginContext, "register_platform_handler", None)))
 
     def test_real_adapter_registration_still_acks_logs_and_records(self):
         from gateway.config import PlatformConfig
@@ -489,7 +489,7 @@ class PinnedHermesContractTests(Base):
             adapter = self.adapter_mod.SlackAdapter(PlatformConfig(enabled=True, extra={"feedback_buttons": True}))
             adapter._app = AsyncApp(authorize=authorize, signing_secret="unused",
                                     request_verification_enabled=False, process_before_response=True)
-            with patch.object(self.hermes_plugins, "get_plugin_manager", return_value=Manager()):
+            with patch.object(self.upstream_plugins, "get_plugin_manager", return_value=Manager()):
                 adapter._register_bolt_handlers()
             response = await adapter._app.async_dispatch(self.AsyncBoltRequest(body=click(), mode="socket_mode"))
             for _ in range(100):

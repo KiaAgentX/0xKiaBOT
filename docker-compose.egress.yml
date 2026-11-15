@@ -8,15 +8,15 @@ services:
     build:
       context: .
       args:
-        HERMES_GIT_REF: ${HERMES_GIT_REF:-v2026.9.24}
+        KIA_GIT_REF: ${KIA_GIT_REF:-v2026.9.24}
     env_file:
       - .env
       - .env.egress
     environment:
-      HERMES_SERVICE_ROLE: egress
+      KIA_SERVICE_ROLE: egress
     restart: unless-stopped
 
-  hermes:
+  0xkia-bot:
     environment:
       EGRESS_PROXY_URL: http://egress:9090
     depends_on:

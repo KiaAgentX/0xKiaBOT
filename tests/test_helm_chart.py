@@ -1,4 +1,4 @@
-"""Render deploy/helm/hermes-agent and check its security and wiring invariants.
+"""Render deploy/helm/0xkia-agent and check its security and wiring invariants.
 
 Skipped when helm is not installed. scripts/test_helm_chart.sh installs the chart
 on a real cluster.
@@ -10,7 +10,7 @@ import unittest
 
 import yaml
 
-CHART = Path(__file__).resolve().parents[1] / "deploy" / "helm" / "hermes-agent"
+CHART = Path(__file__).resolve().parents[1] / "deploy" / "helm" / "0xkia-agent"
 HELM = shutil.which("helm")
 
 
@@ -106,7 +106,7 @@ class HelmChartTests(unittest.TestCase):
         self.assertEqual(agent_cfg["EGRESS_PROXY_URL"], "http://t-hermes-agent-egress.ns.svc.cluster.local:9090")
         self.assertEqual(agent_cfg["EGRESS_SECRETS"], "OPENROUTER_API_KEY,SLACK_BOT_TOKEN")
         egress_cfg = find(docs, "ConfigMap", "t-hermes-agent-egress")["data"]
-        self.assertEqual(egress_cfg["HERMES_SERVICE_ROLE"], "egress")
+        self.assertEqual(egress_cfg["KIA_SERVICE_ROLE"], "egress")
         deploy = find(docs, "Deployment", "t-hermes-agent-egress")
         container = deploy["spec"]["template"]["spec"]["containers"][0]
         self.assertEqual(container["envFrom"][1], {"secretRef": {"name": "e"}})

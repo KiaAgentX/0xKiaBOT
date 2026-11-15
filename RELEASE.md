@@ -19,8 +19,8 @@ During `0.x`, document incompatible changes in the release notes.
    .venv/bin/python -m pip install -r requirements-dev.txt
    .venv/bin/python scripts/run_tests.py
    .venv/bin/python scripts/validate_release.py --tag "v$(cat VERSION)"
-   docker build --build-arg VCS_REF="$(git rev-parse HEAD)" -t radius-hermes:release .
-   docker run --rm --entrypoint python -e HERMES_HOME=/tmp/hermes -e PUBLIC_URL=https://agent.example.com radius-hermes:release /app/scripts/smoke_image.py
+   docker build --build-arg VCS_REF="$(git rev-parse HEAD)" -t 0xkia-bot:release .
+   docker run --rm --entrypoint python -e HERMES_HOME=/tmp/0xkia -e PUBLIC_URL=https://agent.example.com 0xkia-bot:release /app/scripts/smoke_image.py
    ```
 
 4. After merging, tag the merged commit and push the tag:
@@ -49,13 +49,13 @@ See [Railway token scopes](https://docs.railway.com/cli/login).
 
 ## Build provenance and deployment
 
-Hermes defaults to `v2026.9.24`, compatible with the Python 3.11 image. Override
-`HERMES_GIT_REF` with a branch, tag, or full commit SHA when testing an upgrade.
+The upstream hermes-agent pin defaults to `v2026.9.24`, compatible with the Python 3.11 image. Override
+`KIA_GIT_REF` with a branch, tag, or full commit SHA when testing an upgrade.
 `radius-cli`, Foundry (`FOUNDRY_VERSION`), the Linear skill (`LINEAR_SKILL_REF`)
 and the Radius skills snapshot (`RADIUS_SKILLS_REF`, a commit of
 `radiustechsystems/tools`) default to versions or commits pinned in the
 Dockerfile; override the build arg to test an upgrade.
-`/app/build-info.json` records the resolved Hermes, Linear skill, and Radius skill
+`/app/build-info.json` records the resolved hermes-agent (upstream), Linear skill, and Radius skill
 commits and installed Python package versions. CI attaches this manifest to every
 release; it contains no credentials.
 
@@ -65,10 +65,10 @@ records a build's inputs; it does not guarantee byte-for-byte rebuilds. CI build
 and tests an image but does not publish a container image or deploy Railway.
 Deploy the desired tag/commit through the Railway workflow or service settings,
 then verify `/livez` reports the expected version. `/livez` checks the HTTP process;
-verify Hermes responses and any configured integrations separately.
+verify agent responses and any configured integrations separately.
 
-The image installs Telegram, Discord, and Slack chat dependencies from `scripts/requirements-messaging.txt`. These match the pinned Hermes messaging requirements with the optional Discord voice extra excluded: its published PyNaCl constraint conflicts with the upstream security override used by uv. Discord voice-channel support is unavailable in this image; update the messaging pins alongside `HERMES_GIT_REF`.
+The image installs Telegram, Discord, and Slack chat dependencies from `scripts/requirements-messaging.txt`. These match the pinned hermes-agent messaging requirements with the optional Discord voice extra excluded: its published PyNaCl constraint conflicts with the upstream security override used by uv. Discord voice-channel support is unavailable in this image; update the messaging pins alongside `KIA_GIT_REF`.
 
-The pinned Hermes checkout receives a reviewed dependency metadata overlay from `scripts/patch_hermes_dependencies.py`: `PyJWT[crypto]==2.13.0` becomes `2.15.1`. The build fails if the expected upstream declaration changes. Build info preserves the upstream Git commit and records the original and modified source hashes, the applied unified patch and its hash, and the overlay script hash. Runtime and server dependencies still resolve together and pass `pip check`.
+The pinned hermes-agent checkout receives a reviewed dependency metadata overlay from `scripts/patch_kia_dependencies.py`: `PyJWT[crypto]==2.13.0` becomes `2.15.1`. The build fails if the expected upstream declaration changes. Build info preserves the upstream Git commit and records the original and modified source hashes, the applied unified patch and its hash, and the overlay script hash. Runtime and server dependencies still resolve together and pass `pip check`.
 
 PyJWT 2.15.1 includes the [2.15.0 pre-verification payload parser fix](https://github.com/jpadilla/pyjwt/security/advisories/GHSA-42vr-xj54-vc7v) and restores valid Base64URL padding compatibility. The separate [options dictionary mutation advisory](https://github.com/jpadilla/pyjwt/security/advisories/GHSA-gvp8-978c-rx2q) lists no patched version; our DID JWT verifier constructs fresh options dictionaries for unverified inspection and signature/claim verification, avoiding that advisory's shared-dictionary precondition. Regression tests ensure inspection cannot disable later expiration or audience checks. The template fixes ES256K/ES256 algorithms and resolves keys through its own guarded DID/JWKS paths, without PyJWKClient or HMAC verification.

@@ -62,7 +62,7 @@ from a2a_sessions import A2ASessionStore
 from auth import get_did, get_did_document, issue_outbound_token, issue_token, jwt_auth_dep, setup_auth
 import kya_verify
 import x402_seller
-from hermes_client import HermesClient, HermesUnavailableError, HermesUpstreamError
+from kia_client import KiaClient, KiaUnavailableError, KiaUpstreamError
 from logging_utils import (
     clear_request_context,
     configure_logging,
@@ -81,12 +81,12 @@ logger = logging.getLogger("agent-server")
 
 _start_time = time.time()
 
-HERMES_HOME = os.environ.get("HERMES_HOME", "/data/.hermes")
+HERMES_HOME = os.environ.get("HERMES_HOME", "/data/.0xkia")
 REPO_ROOT = Path(__file__).resolve().parents[2]
 STATIC_ROOT = Path(__file__).resolve().parent / "static"
 CONFIG_PATH = Path(HERMES_HOME) / "config.yaml"
-SKILLS_ROOT = os.environ.get("SKILLS_ROOT", "/data/.hermes/well-known-skills")
-RADIUS_SKILLS_DIR = os.environ.get("RADIUS_SKILLS_DIR", "/data/.hermes/external-skills/radius-skills")
+SKILLS_ROOT = os.environ.get("SKILLS_ROOT", "/data/.0xkia/well-known-skills")
+RADIUS_SKILLS_DIR = os.environ.get("RADIUS_SKILLS_DIR", "/data/.0xkia/external-skills/radius-skills")
 VENDORED_SKILLS_SOURCE = os.environ.get("VENDORED_SKILLS_SOURCE", RADIUS_SKILLS_DIR)
 VENDORED_SKILLS_MANIFEST = Path(
     os.environ.get("VENDORED_SKILLS_MANIFEST", f"{HERMES_HOME}/vendored-skills.json")
@@ -96,9 +96,9 @@ VENDORED_SKILLS_MANIFEST = Path(
 BASE_URL = get_base_url()
 A2A_PUBLIC_URL = os.environ.get("A2A_PUBLIC_URL", BASE_URL)
 A2A_MODE = os.environ.get("A2A_MODE", "auto").lower()
-HERMES_URL = os.environ.get("HERMES_URL", "http://127.0.0.1:8642")
+KIA_URL = os.environ.get("KIA_URL", os.environ.get("HERMES_URL", "http://127.0.0.1:8642"))
 A2A_BRIDGE_MODEL = os.environ.get("A2A_BRIDGE_MODEL", "hermes-agent")
-HERMES_TIMEOUT = float(os.environ.get("HERMES_TIMEOUT", "120"))
+KIA_TIMEOUT = float(os.environ.get("KIA_TIMEOUT", os.environ.get("HERMES_TIMEOUT", "120")))
 A2A_SESSION_ROOT = Path(HERMES_HOME) / "a2a-sessions"
 A2A_SESSION_TICK_SECONDS = float(os.environ.get("A2A_SESSION_TICK_SECONDS", "2.5"))
 
@@ -106,7 +106,7 @@ RADIUS_RPC_TESTNET = os.environ.get("RADIUS_RPC_TESTNET", "https://rpc.testnet.r
 RADIUS_RPC_MAINNET = os.environ.get("RADIUS_RPC_MAINNET", "https://rpc.radiustech.xyz")
 TX_COUNT_CACHE_TTL = float(os.environ.get("TX_COUNT_CACHE_TTL", "15"))
 
-_hermes_client: Optional[HermesClient] = None
+_kia_client: Optional[KiaClient] = None
 _a2a_bridge: Optional[A2ABridge] = None
 _a2a_session_store = A2ASessionStore(A2A_SESSION_ROOT)
 _a2a_session_worker: Optional[asyncio.Task] = None
@@ -150,8 +150,8 @@ def _jsonrpc_error_payload(error_obj: Any) -> dict[str, Any]:
     return jsonrpc_error_payload(error_obj)
 
 
-def _hermes_api_key() -> Optional[str]:
-    return os.environ.get("HERMES_API_KEY") or os.environ.get("API_SERVER_KEY")
+def _kia_api_key() -> Optional[str]:
+    return os.environ.get("KIA_API_KEY") or os.environ.get("HERMES_API_KEY") or os.environ.get("API_SERVER_KEY")
 
 
 def _mock_wallet_summary() -> Optional[dict]:
@@ -233,11 +233,11 @@ def _parse_allowed_roots() -> list[Path]:
 
 
 def _direct_available() -> bool:
-    return bool(_a2a_bridge and _hermes_api_key())
+    return bool(_a2a_bridge and _kia_api_key())
 
 
 def _internal_api_key() -> Optional[str]:
-    return _hermes_api_key()
+    return _kia_api_key()
 
 
 def _resolve_mode(method: str) -> str:
@@ -465,7 +465,7 @@ def _build_dialogue_prompt(session: dict[str, Any]) -> str:
 
 
 async def _exchange_api_key_for_token(
-    base_url: str, api_key: str, subject: str = "hermes"
+    base_url: str, api_key: str, subject: str = "0xkia"
 ) -> str:
     async with httpx.AsyncClient(timeout=20.0) as client:
         response = await client.post(
@@ -562,14 +562,14 @@ async def _run_session_turn(session_id: str) -> None:
         or session.get("next_action") != "compose_local_turn"
     ):
         return
-    if not _hermes_client:
+    if not _kia_client:
         _a2a_session_store.mark_error(
-            session_id, "Direct Hermes client unavailable for managed A2A session"
+            session_id, "Direct 0xKia client unavailable for managed A2A session"
         )
         return
     try:
         prompt = _build_dialogue_prompt(session)
-        composed = await _hermes_client.complete(
+        composed = await _kia_client.complete(
             messages=[{"role": "user", "content": prompt}],
             session_id=f"a2a-session:{session_id}",
         )
@@ -829,14 +829,14 @@ def _load_vendored_manifest() -> dict[str, Any]:
 
 
 def _list_local_skills() -> dict[str, Any]:
-    hermes_skills_root = Path(HERMES_HOME) / "skills"
-    flat = sorted(p.stem for p in hermes_skills_root.glob("*.md") if p.is_file())
+    kia_skills_root = Path(HERMES_HOME) / "skills"
+    flat = sorted(p.stem for p in kia_skills_root.glob("*.md") if p.is_file())
     radius_bucket: list[str] = []
-    radius_root = hermes_skills_root / "radius"
+    radius_root = kia_skills_root / "radius"
     if radius_root.exists():
         radius_bucket = sorted(p.name for p in radius_root.iterdir() if p.is_dir())
     return {
-        "root": str(hermes_skills_root),
+        "root": str(kia_skills_root),
         "flat": flat,
         "radius_bucket": radius_bucket,
     }
@@ -1222,17 +1222,17 @@ async def _run_radius_sync_task(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _hermes_client, _a2a_bridge, _a2a_session_worker
+    global _kia_client, _a2a_bridge, _a2a_session_worker
     await setup_auth(BASE_URL)
-    hermes_api_key = _hermes_api_key()
-    if hermes_api_key:
-        _hermes_client = HermesClient(
-            base_url=HERMES_URL,
-            api_key=hermes_api_key,
+    kia_api_key = _kia_api_key()
+    if kia_api_key:
+        _kia_client = KiaClient(
+            base_url=KIA_URL,
+            api_key=kia_api_key,
             model=A2A_BRIDGE_MODEL,
-            timeout=HERMES_TIMEOUT,
+            timeout=KIA_TIMEOUT,
         )
-        _a2a_bridge = A2ABridge(_hermes_client, _parse_allowed_roots(), A2A_PUBLIC_URL)
+        _a2a_bridge = A2ABridge(_kia_client, _parse_allowed_roots(), A2A_PUBLIC_URL)
     _a2a_session_worker = asyncio.create_task(
         _session_worker_loop(), name="a2a-session-worker"
     )
@@ -1246,7 +1246,7 @@ async def lifespan(app: FastAPI):
         base_url=BASE_URL,
         a2a_mode=A2A_MODE,
         direct_ready=_direct_available(),
-        hermes_url=HERMES_URL,
+        kia_url=KIA_URL,
         a2a_session_root=str(A2A_SESSION_ROOT),
         a2a_session_tick_seconds=A2A_SESSION_TICK_SECONDS,
         vendored_skill_roots=vendored_manifest.get("roots", []),
@@ -1261,8 +1261,8 @@ async def lifespan(app: FastAPI):
             await _a2a_session_worker
         except asyncio.CancelledError:
             pass
-    if _hermes_client:
-        await _hermes_client.close()
+    if _kia_client:
+        await _kia_client.close()
 
 
 app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None)
@@ -1787,7 +1787,7 @@ async def agent_card():
 
 
 def _build_agent_card_payload() -> dict:
-    agent_name = os.environ.get("AGENT_NAME", "Hermes Agent")
+    agent_name = os.environ.get("AGENT_NAME", "0xKia")
     did = get_did()
     webhook_enabled = bool(os.environ.get("WEBHOOK_SECRET"))
     skills_index = json.loads(_get_index())
@@ -2339,7 +2339,7 @@ def _build_agent_graph_payload() -> dict[str, Any]:
     for name, skill in bundled_skills.items():
         skill_catalog[name] = {
             "name": name,
-            "description": skill.get("description") or "Bundled Hermes skill",
+            "description": skill.get("description") or "Bundled 0xKia skill",
             "origins": [skill.get("origin") or "bundled"],
             "published": bool(skill.get("published")),
             "href": f"{BASE_URL}/.well-known/agent-skills/{name}/SKILL.md"
@@ -2912,7 +2912,7 @@ async def index(request: Request):
     )
     radius_site = "https://radiustech.xyz"
     template_repo = "https://github.com/radius-workshop/radius-hermes-railway-template"
-    page_title = f"{agent_name} | Radius Hermes Agent"
+    page_title = f"{agent_name} | 0xKia Agent"
     og_title = f"{agent_name} | Public A2A Discovery"
     og_description = _truncate_text(
         f"{agent_description} Human-readable capabilities plus canonical /.well-known discovery documents for A2A clients, registries, and operator tooling.",
@@ -5350,34 +5350,34 @@ async def _handle_delegated(rpc_id, message: dict, issuer_did: str | None, *, al
     )
 
 
-def _hermes_error_response(rpc_id, exc: Exception) -> JSONResponse:
-    if isinstance(exc, HermesUnavailableError):
+def _kia_error_response(rpc_id, exc: Exception) -> JSONResponse:
+    if isinstance(exc, KiaUnavailableError):
         log_event(
             logger,
             logging.WARNING,
-            "Direct A2A cannot reach Hermes backend",
+            "Direct A2A cannot reach the 0xKia backend",
             event="a2a.direct",
             outcome="error",
             rpc_id=rpc_id,
-            hermes_error=str(exc),
+            kia_error=str(exc),
             error_type="unavailable",
         )
         return _rpc_error_response(
             rpc_id,
             InternalError(
-                message="Hermes backend is unreachable. Check HERMES_URL and HERMES_API_KEY/API_SERVER_KEY."
+                message="0xKia backend is unreachable. Check KIA_URL and KIA_API_KEY/API_SERVER_KEY."
             ),
             status_code=503,
         )
-    if isinstance(exc, HermesUpstreamError):
+    if isinstance(exc, KiaUpstreamError):
         log_event(
             logger,
             logging.WARNING,
-            "Direct A2A Hermes upstream returned an error",
+            "Direct A2A 0xKia backend returned an error",
             event="a2a.direct",
             outcome="error",
             rpc_id=rpc_id,
-            hermes_error=str(exc),
+            kia_error=str(exc),
             error_type="upstream",
         )
         return _rpc_error_response(
@@ -5824,7 +5824,7 @@ async def _handle_a2a(request: Request, auth: dict) -> Response:
                     duration_ms=round((time.perf_counter() - started) * 1000, 2),
                 )
                 return _rpc_success_response(rpc_id, send_payload.get("result"))
-            except HermesUnavailableError:
+            except KiaUnavailableError:
                 # In auto mode, degrade to delegated task submission if direct mode backend is down.
                 if A2A_MODE == "auto":
                     log_event(
@@ -5864,32 +5864,32 @@ async def _handle_a2a(request: Request, auth: dict) -> Response:
                     issuer_did=auth.get("issuer") or auth.get("kya_issuer"),
                     duration_ms=round((time.perf_counter() - started) * 1000, 2),
                 )
-            except (HermesUnavailableError, HermesUpstreamError) as exc:
-                if isinstance(exc, HermesUnavailableError):
+            except (KiaUnavailableError, KiaUpstreamError) as exc:
+                if isinstance(exc, KiaUnavailableError):
                     log_event(
                         logger,
                         logging.WARNING,
-                        "Direct A2A streaming cannot reach Hermes backend",
+                        "Direct A2A streaming cannot reach the 0xKia backend",
                         event="a2a.direct_stream",
                         outcome="error",
                         rpc_id=rpc_id,
                         issuer_did=auth.get("issuer") or auth.get("kya_issuer"),
                         context_id=get_request_context().get("context_id"),
-                        hermes_error=str(exc),
+                        kia_error=str(exc),
                         error_type="unavailable",
                     )
-                    message_text = "Hermes backend is unreachable. Check HERMES_URL and HERMES_API_KEY/API_SERVER_KEY."
+                    message_text = "0xKia backend is unreachable. Check KIA_URL and KIA_API_KEY/API_SERVER_KEY."
                 else:
                     log_event(
                         logger,
                         logging.WARNING,
-                        "Direct A2A streaming Hermes upstream returned an error",
+                        "Direct A2A streaming 0xKia backend returned an error",
                         event="a2a.direct_stream",
                         outcome="error",
                         rpc_id=rpc_id,
                         issuer_did=auth.get("issuer") or auth.get("kya_issuer"),
                         context_id=get_request_context().get("context_id"),
-                        hermes_error=str(exc),
+                        kia_error=str(exc),
                         error_type="upstream",
                     )
                     message_text = str(exc)
@@ -5936,7 +5936,7 @@ async def _handle_a2a(request: Request, auth: dict) -> Response:
         )
         return _rpc_error_response(rpc_id, InvalidParamsError(message="Invalid params"))
     except Exception as exc:
-        return _hermes_error_response(rpc_id, exc)
+        return _kia_error_response(rpc_id, exc)
 
 
 @app.get("/files/{file_path:path}")

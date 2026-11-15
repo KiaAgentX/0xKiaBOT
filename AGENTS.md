@@ -24,18 +24,18 @@ a cloud session: build steps have no network there. If you change the
 `Dockerfile`, `scripts/entrypoint.sh`, the requirements files or
 `scripts/smoke_image.py`, say so in the PR and rely on CI for that job.
 
-The Helm chart is in `deploy/helm/hermes-agent`. `tests/test_helm_chart.py`
+The Helm chart is in `deploy/helm/0xkia-agent`. `tests/test_helm_chart.py`
 renders it when `helm` is installed. CI's `container` job also runs
 `scripts/test_helm_chart.sh`, which installs the chart on a kind cluster.
 
 ## Rules
 
-- This file is for agents working on the repo. The deployed Hermes agent reads
-  `HERMES.md` and `skills/*.md`; they ship in the image, and tests assert on the
+- This file is for agents working on the repo. The deployed 0xKia agent reads
+  `HERMES.md` (the filename follows the upstream framework convention) and `skills/*.md`; they ship in the image, and tests assert on the
   tool and plugin names they mention. Put runtime behaviour there, not here.
 - Use Python 3.11, as CI and the image do. The system `python3` in cloud
   sessions is 3.13 with no dependencies, and pip can't install into it.
-- Image inputs are pinned in the `Dockerfile` (`HERMES_GIT_REF`,
+- Image inputs are pinned in the `Dockerfile` (`KIA_GIT_REF`,
   the `node` stage image, `RADIUS_CLI_VERSION`, `FOUNDRY_VERSION`,
   `LINEAR_SKILL_REF`, `RADIUS_SKILLS_REF`). Bump them deliberately, one at a
   time.

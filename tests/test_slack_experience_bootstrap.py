@@ -48,7 +48,7 @@ class SlackExperienceBootstrapTests(unittest.TestCase):
         self.boot()
         self.assertEqual(self.config.read_text(), original)
 
-    def test_each_var_writes_its_hermes_key(self):
+    def test_each_var_writes_its_kia_key(self):
         self.config.write_text(yaml.safe_dump({
             "model": "keep-me",
             "display": {"platforms": {"slack": {"tool_progress": "new"}}},
@@ -160,7 +160,7 @@ class SlackExperienceBootstrapTests(unittest.TestCase):
         self.boot(SLACK_CHANNEL_SKILL_BINDINGS='[{"id": "C1", "skill": "x402-payments"}]')
         self.assertEqual(self.load()["slack"]["channel_skill_bindings"], [{"id": "C1", "skill": "x402-payments"}])
 
-    def test_task_card_warning_follows_hermes_precedence(self):
+    def test_task_card_warning_follows_runtime_precedence(self):
         self.config.write_text(yaml.safe_dump({"display": {"tool_progress": "off", "platforms": {"slack": {"tool_progress": "new"}}}}))
         result = self.boot(SLACK_NATIVE_TASK_CARDS="true")
         self.assertNotIn("task cards are off", result.stderr)
@@ -221,7 +221,7 @@ class SlackExperienceBootstrapTests(unittest.TestCase):
         self.assertIn("SLACK_STREAMING=false", result.stderr)
         result = self.boot(SLACK_STREAMING="false")
         self.assertNotIn("twice", result.stderr)
-        # An unfurl key makes Hermes stream by editing instead, so no warning.
+        # An unfurl key makes the runtime stream by editing instead, so no warning.
         for operator in ({"slack": {"unfurl_links": False}},
                          {"platforms": {"slack": {"extra": {"unfurl_media": True}}}}):
             with self.subTest(operator=operator):

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply the reviewed dependency compatibility overlay to the pinned Hermes source.
+"""Apply the reviewed dependency compatibility overlay to the pinned hermes-agent source.
 
 This changes dependency metadata only. Preserve the upstream Git revision and
 record both source hashes plus this script's hash for image provenance.
@@ -17,13 +17,13 @@ NEW = "PyJWT[crypto]==2.15.1"
 MANIFEST = ".radius-dependency-overrides.json"
 
 
-def apply(hermes_root: Path) -> dict:
-    source = hermes_root / "pyproject.toml"
+def apply(upstream_root: Path) -> dict:
+    source = upstream_root / "pyproject.toml"
     before = source.read_bytes()
     text = before.decode("utf-8")
     dependencies = tomllib.loads(text).get("project", {}).get("dependencies", [])
     if dependencies.count(OLD) != 1 or text.count('"' + OLD + '"') != 1:
-        raise ValueError("Hermes PyJWT declaration changed; review the compatibility overlay before building")
+        raise ValueError("hermes-agent PyJWT declaration changed; review the compatibility overlay before building")
     after = text.replace('"' + OLD + '"', '"' + NEW + '"', 1).encode("utf-8")
     patch_name = ".radius-dependency-overrides.patch"
     patch = "".join(difflib.unified_diff(
@@ -41,13 +41,13 @@ def apply(hermes_root: Path) -> dict:
         "changes": [{"from": OLD, "to": NEW}],
     }
     source.write_bytes(after)
-    (hermes_root / patch_name).write_bytes(patch)
-    (hermes_root / MANIFEST).write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    (upstream_root / patch_name).write_bytes(patch)
+    (upstream_root / MANIFEST).write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     return manifest
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("hermes_root", type=Path)
+    parser.add_argument("upstream_root", type=Path)
     args = parser.parse_args()
-    apply(args.hermes_root)
+    apply(args.upstream_root)

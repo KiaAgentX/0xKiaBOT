@@ -13,10 +13,10 @@ from scripts.agent_server import main
 class AgentGraphTests(unittest.TestCase):
     def _sample_agent_card(self) -> dict:
         return {
-            "name": "Hermes Agent",
+            "name": "0xKia Agent",
             "description": "A test agent",
             "provider": {
-                "name": "Hermes Agent",
+                "name": "0xKia Agent",
                 "url": main.BASE_URL,
                 "did": "did:web:test.example",
             },
@@ -45,7 +45,7 @@ class AgentGraphTests(unittest.TestCase):
     def _sample_graph_payload(self) -> dict:
         return {
             "generated_at": "2026-04-22T00:00:00Z",
-            "agent": {"id": "agent", "label": "Hermes Agent", "description": "A test agent"},
+            "agent": {"id": "agent", "label": "0xKia Agent", "description": "A test agent"},
             "stats": {
                 "node_count": 3,
                 "edge_count": 2,
@@ -57,7 +57,7 @@ class AgentGraphTests(unittest.TestCase):
             "nodes": [
                 {
                     "id": "agent",
-                    "label": "Hermes Agent",
+                    "label": "0xKia Agent",
                     "kind": "agent",
                     "category": "core",
                     "external": False,

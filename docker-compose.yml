@@ -1,17 +1,17 @@
 services:
-  hermes:
+  0xkia-bot:
     build:
       context: .
       args:
-        HERMES_GIT_REF: ${HERMES_GIT_REF:-v2026.9.24}
+        KIA_GIT_REF: ${KIA_GIT_REF:-v2026.9.24}
     env_file: .env
     environment:
       PORT: "3000"
     ports:
       - "3000:3000"
     volumes:
-      - hermes-data:/data
+      - 0xkia-data:/data
     restart: unless-stopped
 
 volumes:
-  hermes-data:
+  0xkia-data:

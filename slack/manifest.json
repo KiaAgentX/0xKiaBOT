@@ -4,10 +4,10 @@
     "minor_version": 1
   },
   "display_information": {
-    "name": "Radius Agent",
-    "description": "Radius Testnet wallet and bounded x402 API tools.",
+    "name": "0xKia",
+    "description": "دستیار هوشمند پرداخت‌ها و تعامل روی شبکه Radius — کیف پول تست‌نت، ابزارهای x402 و A2A.",
     "background_color": "#0b1f3a",
-    "long_description": "Hermes on Railway with Radius Testnet wallet tools, approved-host x402 API payments and a persistent attempt ledger. Mainnet and Base payment execution are disabled in this release. Settlement reports require separate chain reconciliation. Restrict tool access to trusted operators."
+    "long_description": "0xKia is a crypto assistant running on Railway with Radius Testnet wallet tools, approved-host x402 API payments and a persistent attempt ledger. Mainnet and Base payment execution are disabled in this release. Settlement reports require separate chain reconciliation. Restrict tool access to trusted operators."
   },
   "features": {
     "app_home": {
@@ -16,11 +16,11 @@
       "messages_tab_read_only_enabled": false
     },
     "bot_user": {
-      "display_name": "radius-agent",
+      "display_name": "0xkia",
       "always_online": true
     },
     "agent_view": {
-      "agent_description": "Radius Testnet wallet and approved-host x402 API tools."
+      "agent_description": "دستیار هوشمند پرداخت‌ها روی شبکه Radius — کیف پول تست‌نت و ابزارهای تأییدشده x402."
     }
   },
   "oauth_config": {

@@ -1,11 +1,11 @@
-# Default values for hermes-agent. Every key is documented in README.md.
+# Default values for 0xkia-agent. Every key is documented in README.md.
 #
 # The chart never holds real secrets by default: point agent.existingSecret
 # (and egress.existingSecret) at Secrets you create however you like —
 # kubectl, Sealed Secrets, External Secrets, Vault, a cloud CSI driver.
 
 image:
-  repository: ghcr.io/radius-workshop/radius-hermes-railway-template
+  repository: ghcr.io/your-org/0xkia-bot
   # Defaults to the chart's appVersion.
   tag: ""
   # sha256:... — when set, the image is pulled by digest and tag is ignored.
@@ -26,7 +26,7 @@ agent:
   # Required unless secrets.create is true.
   existingSecret: ""
   # Non-secret settings, rendered into a ConfigMap and loaded with envFrom.
-  # Keys with empty values are dropped (Hermes fails on empty integer vars).
+  # Keys with empty values are dropped (the runtime fails on empty integer vars).
   config: {}
   #  TELEGRAM_ALLOWED_USERS: "123456789"
   #  LLM_MODEL: openai/gpt-5.4-nano
@@ -88,7 +88,7 @@ agent:
   extraContainers: []
 
 persistence:
-  # Without persistence, the wallet, identity and Hermes state are lost on
+  # Without persistence, the wallet, identity and 0xKia state are lost on
   # every restart. Keep this on outside throwaway tests.
   enabled: true
   # Use an existing PVC, e.g. one restored from a Railway /data backup.

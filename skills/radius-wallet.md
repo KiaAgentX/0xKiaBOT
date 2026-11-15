@@ -34,7 +34,7 @@ When a user asks a broad question about Radius, explain it in product terms firs
 
 - Radius is the ecosystem this agent is built for.
 - The template includes a built-in Radius Testnet wallet.
-- The bundled `radius-wallet` skill and any vendored Radius marketplace skills discovered by Hermes are part of that ecosystem.
+- The bundled `radius-wallet` skill and any vendored Radius marketplace skills discovered by 0xKia are part of that ecosystem.
 
 If you do not have more detailed product facts loaded, say that this template is Radius-focused and then describe the concrete Radius capabilities available in this agent instead of falling back to generic dictionary meanings.
 
@@ -47,13 +47,13 @@ If you do not have more detailed product facts loaded, say that this template is
 
 This template uses a single local Radius wallet backed by `radius-cli`.
 
-- Wallet keystore lives under `${RADIUS_HOME:-/data/.hermes/.radius-cli}`.
+- Wallet keystore lives under `${RADIUS_HOME:-/data/.0xkia/.radius-cli}`.
 - The same wallet powers transfers, balance checks, DID/JWT auth, homepage wallet summary, and ERC-8004 identity.
 - Para provider support is out of scope in this template revision.
 
 ## Preferred tools
 
-Prefer the Hermes `radius-cli` plugin tools over direct script execution when they are available:
+Prefer the 0xKia `radius-cli` plugin tools over direct script execution when they are available:
 
 - `radius_wallet_address`
 - `radius_balance`

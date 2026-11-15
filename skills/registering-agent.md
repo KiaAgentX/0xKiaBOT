@@ -39,7 +39,7 @@ The canonical registration shape in this repo is:
 ```json
 {
   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
-  "name": "Hermes Agent",
+  "name": "0xKia",
   "description": "A natural language description of the agent",
   "image": "https://example.com/agent.png",
   "services": [
@@ -72,7 +72,7 @@ The plugin normalizes field order and encodes the registration as `data:applicat
 
 ## Behavioral rules
 
-1. For the common case of registering this current Hermes agent, prefer `erc8004_register_self`.
+1. For the common case of registering this current 0xKia agent, prefer `erc8004_register_self`.
 2. For `erc8004_register_self`, collect missing operator-owned profile fields such as `name`, `description`, `image`, and `supportedTrust` before calling the tool. Do not invent them.
 3. The self-registration flow derives the current agent's `web`, `A2A`, and `DID` service entries automatically. Add MCP, OASF, ENS, email, or explicit cross-registry references only when the user provides them.
 4. For reads, use the plugin tools directly and return both `token_uri` and `normalized_token_uri` plus the decoded registration when available.

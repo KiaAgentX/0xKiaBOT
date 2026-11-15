@@ -27,7 +27,7 @@ class NonRootImageTests(unittest.TestCase):
                 result = subprocess.run(
                     ["bash", str(ROOT / "scripts" / "entrypoint.sh")],
                     env={"PATH": os.environ["PATH"], "HOME": str(data),
-                         "HERMES_HOME": str(data / ".hermes")},
+                         "HERMES_HOME": str(data / ".0xkia")},
                     capture_output=True, text=True, timeout=30,
                 )
             finally:

@@ -1,6 +1,6 @@
 FROM python:3.11-slim-trixie AS builder
 
-ARG HERMES_GIT_REF=v2026.9.24
+ARG KIA_GIT_REF=v2026.9.24
 
 RUN apt-get update \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -12,7 +12,7 @@ WORKDIR /opt
 RUN git init /opt/hermes-agent \
   && cd /opt/hermes-agent \
   && git remote add origin https://github.com/NousResearch/hermes-agent.git \
-  && git fetch --depth 1 origin "${HERMES_GIT_REF}" \
+  && git fetch --depth 1 origin "${KIA_GIT_REF}" \
   && git checkout --detach FETCH_HEAD \
   && git submodule update --init --recursive --depth 1
 
@@ -20,15 +20,15 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
 
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
-# Resolve Hermes and the server together so neither can silently replace an
+# Resolve the 0xKia runtime and the server together so neither can silently replace an
 # exact upstream dependency pin with an incompatible version.
 COPY scripts/agent_server/requirements.txt /tmp/agent-server-requirements.txt
 COPY scripts/requirements-messaging.txt /tmp/messaging-requirements.txt
-COPY scripts/patch_hermes_dependencies.py /tmp/patch_hermes_dependencies.py
+COPY scripts/patch_kia_dependencies.py /tmp/patch_kia_dependencies.py
 # Keep the pinned upstream source commit while applying the reviewed PyJWT
 # security compatibility overlay. Exact old metadata is required; provenance
 # records the source before/after hashes and the applied patch script hash.
-RUN python /tmp/patch_hermes_dependencies.py /opt/hermes-agent
+RUN python /tmp/patch_kia_dependencies.py /opt/hermes-agent
 # Upstream's messaging extra requests discord.py[voice], whose PyNaCl<1.6
 # constraint is unsafe and requires uv-only overrides. This pip-based image
 # installs the same chat adapters without optional Discord voice dependencies.
@@ -48,7 +48,8 @@ FROM python:3.11-slim-trixie
 # balances, transfers, receipts, signing. Pin it so boots are reproducible.
 ARG RADIUS_CLI_VERSION=0.5.0
 ARG VCS_REF=unknown
-LABEL org.opencontainers.image.source="https://github.com/radius-workshop/radius-hermes-railway-template" \
+LABEL org.opencontainers.image.title="0xKia Bot" \
+      org.opencontainers.image.source="https://github.com/radius-workshop/radius-hermes-railway-template" \
       org.opencontainers.image.revision="${VCS_REF}"
 
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
@@ -68,7 +69,7 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # iron-proxy (ironsh/iron-proxy) powers the optional egress service
-# (HERMES_SERVICE_ROLE=egress). Same pin as Hermes' `hermes egress`; the
+# (KIA_SERVICE_ROLE=egress). Same pin as the upstream `hermes egress`; the
 # tarball is checked against the release's SHA-256 before extraction.
 ARG IRON_PROXY_VERSION=0.39.0
 ARG IRON_PROXY_SHA256_AMD64=0ab2e031074a01410caecaa2769c0b38f69cbdf4b6333bce498fe73919f6f9f6
@@ -104,15 +105,15 @@ RUN curl -fsSL https://byterover.dev/install.sh | sh \
 # The container runs as this unprivileged user, never root. /data is created
 # owned by it so new Docker volumes inherit that ownership; a volume mounted
 # root-owned must be handed to uid 10001 (Kubernetes: fsGroup).
-RUN groupadd --system --gid 10001 hermes \
+RUN groupadd --system --gid 10001 kia \
   && useradd --system --uid 10001 --gid 10001 --home-dir /data --no-create-home \
-    --shell /usr/sbin/nologin hermes \
+    --shell /usr/sbin/nologin kia \
   && mkdir -p /data \
   && chown 10001:10001 /data
 
 ENV PATH="/root/.local/bin:/opt/foundry/bin:/opt/venv/bin:${PATH}" \
   PYTHONUNBUFFERED=1 \
-  HERMES_HOME=/data/.hermes \
+  HERMES_HOME=/data/.0xkia \
   HOME=/data
 
 COPY --from=builder /opt/venv /opt/venv

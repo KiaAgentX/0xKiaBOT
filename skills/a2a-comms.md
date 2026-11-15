@@ -130,7 +130,7 @@ If the remote agent issued you an API key (their `JWT_API_KEY`), exchange it for
 curl -s -X POST https://<remote-agent-url>/token \
   -H "X-Api-Key: <api-key>" \
   -H "Content-Type: application/json" \
-  -d '{"sub": "hermes"}' | jq -r .token
+  -d '{"sub": "0xkia"}' | jq -r .token
 ```
 
 Store the token in a shell variable for subsequent calls:
@@ -138,7 +138,7 @@ Store the token in a shell variable for subsequent calls:
 TOKEN=$(curl -s -X POST https://<remote-agent-url>/token \
   -H "X-Api-Key: <api-key>" \
   -H "Content-Type: application/json" \
-  -d '{"sub": "hermes"}' | jq -r .token)
+  -d '{"sub": "0xkia"}' | jq -r .token)
 ```
 
 Tokens are valid for 24 hours.
@@ -265,5 +265,5 @@ When both are set, you can get a token and send a task without asking the user f
 | HTTP 403 / DID not trusted | Your DID isn't in the remote's `TRUSTED_DIDS` | Fetch this agent's DID (`curl $PUBLIC_URL/.well-known/did.json \| python3 -c "import sys,json; print(json.load(sys.stdin)['id'])"`), share it with the remote operator to add to their `TRUSTED_DIDS`, or get an API key |
 | HTTP 404 on `/token` | Remote hasn't set `JWT_API_KEY` or `JWT_EXCHANGE_KEY` | Ask the remote agent operator to configure one of them |
 | JSON-RPC `-32603` "Webhook not configured" | Remote agent's `WEBHOOK_SECRET` isn't set | Remote agent needs `WEBHOOK_ENABLED=true` and `WEBHOOK_SECRET` in Railway variables |
-| JSON-RPC `-32603` "Could not reach agent backend" | Remote Hermes webhook is down | Remote agent should check their container logs |
+| JSON-RPC `-32603` "Could not reach agent backend" | Remote agent webhook is down | Remote agent should check their container logs |
 | `curl: Connection refused` | Agent URL is wrong or service is down | Verify the URL and that the remote service is running |

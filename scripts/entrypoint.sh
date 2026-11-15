@@ -3,13 +3,19 @@ set -euo pipefail
 
 # The same image runs the egress proxy service: it holds the real secrets and
 # needs none of the agent bootstrap below. See README "Egress proxy".
-if [[ "${HERMES_SERVICE_ROLE:-agent}" == "egress" ]]; then
+if [[ "${KIA_SERVICE_ROLE:-${HERMES_SERVICE_ROLE:-agent}}" == "egress" ]]; then
   exec python3 /app/scripts/egress/iron_egress.py proxy
 fi
 
-export HERMES_HOME="${HERMES_HOME:-/data/.hermes}"
+export HERMES_HOME="${HERMES_HOME:-/data/.0xkia}"
 export HOME="${HOME:-/data}"
 export MESSAGING_CWD="${MESSAGING_CWD:-/data/workspace}"
+
+# 0xKia rebrand: migrate the legacy Hermes state directory once.
+if [[ -d /data/.hermes && ! -d /data/.0xkia && "${HERMES_HOME}" == "/data/.0xkia" ]]; then
+  mv /data/.hermes /data/.0xkia
+  echo "[bootstrap] Migrated legacy state: /data/.hermes -> /data/.0xkia"
+fi
 
 # The image runs as uid 10001, never root, so the data volume must be writable
 # by that user. Fail with a fix instead of a later "Permission denied".
@@ -66,14 +72,14 @@ start_log_forwarder() {
     (
       tail -n 0 -F "$file_path" 2>/dev/null \
         | while IFS= read -r line; do
-            printf '[hermes:%s] %s\n' "$label" "$line" >&2
+            printf '[0xkia:%s] %s\n' "$label" "$line" >&2
           done
     ) &
   else
     (
       tail -n 0 -F "$file_path" 2>/dev/null \
         | while IFS= read -r line; do
-            printf '[hermes:%s] %s\n' "$label" "$line"
+            printf '[0xkia:%s] %s\n' "$label" "$line"
           done
     ) &
   fi
@@ -81,21 +87,21 @@ start_log_forwarder() {
   TAIL_PIDS+=("$!")
 }
 
-start_hermes_log_forwarders() {
-  if ! is_true "${HERMES_FORWARD_LOG_FILES:-true}"; then
-    echo "[bootstrap] Hermes log forwarding disabled."
+start_kia_log_forwarders() {
+  if ! is_true "${KIA_FORWARD_LOG_FILES:-${HERMES_FORWARD_LOG_FILES:-true}}"; then
+    echo "[bootstrap] 0xKia log forwarding disabled."
     return
   fi
 
   local logs_dir="${HERMES_HOME}/logs"
   mkdir -p "$logs_dir"
 
-  echo "[bootstrap] Forwarding Hermes log files from ${logs_dir} to Railway stdout/stderr..."
+  echo "[bootstrap] Forwarding 0xKia log files from ${logs_dir} to Railway stdout/stderr..."
   start_log_forwarder "${logs_dir}/agent.log" "stdout"
   start_log_forwarder "${logs_dir}/errors.log" "stderr"
 
-  if is_true "${HERMES_FORWARD_GATEWAY_LOG:-false}"; then
-    echo "[bootstrap] Forwarding gateway.log as an additional Hermes log stream."
+  if is_true "${KIA_FORWARD_GATEWAY_LOG:-${HERMES_FORWARD_GATEWAY_LOG:-false}}"; then
+    echo "[bootstrap] Forwarding gateway.log as an additional 0xKia log stream."
     start_log_forwarder "${logs_dir}/gateway.log" "stdout"
   fi
 }
@@ -235,21 +241,29 @@ if [[ -z "${RADIUS_WALLET_ADDRESS:-}" && -f "$RADIUS_ADDR_FILE" ]]; then
   export RADIUS_WALLET_ADDRESS="$(cat "$RADIUS_ADDR_FILE")"
 fi
 
-# === Agent server: auto-generate HERMES_API_KEY if not provided ===
-HERMES_API_KEY_FILE="${HERMES_HOME}/.hermes_api_key"
-if [[ -z "${HERMES_API_KEY:-}" && -n "${API_SERVER_KEY:-}" ]]; then
-  export HERMES_API_KEY="${API_SERVER_KEY}"
-  echo "[bootstrap] Using API_SERVER_KEY as HERMES_API_KEY for the A2A direct bridge."
+# === Agent server: auto-generate KIA_API_KEY if not provided ===
+KIA_API_KEY_FILE="${HERMES_HOME}/.0xkia_api_key"
+if [[ -z "${KIA_API_KEY:-}" && -n "${HERMES_API_KEY:-}" ]]; then
+  export KIA_API_KEY="${HERMES_API_KEY}"
+  echo "[bootstrap] Using legacy HERMES_API_KEY as KIA_API_KEY."
 fi
-if [[ -z "${HERMES_API_KEY:-}" && -f "$HERMES_API_KEY_FILE" ]]; then
-  export HERMES_API_KEY="$(cat "$HERMES_API_KEY_FILE")"
-  echo "[bootstrap] Loaded stored Hermes API key."
+if [[ -z "${KIA_API_KEY:-}" && -n "${API_SERVER_KEY:-}" ]]; then
+  export KIA_API_KEY="${API_SERVER_KEY}"
+  echo "[bootstrap] Using API_SERVER_KEY as KIA_API_KEY for the A2A direct bridge."
 fi
-if [[ -z "${HERMES_API_KEY:-}" ]]; then
-  export HERMES_API_KEY="$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
-  echo "$HERMES_API_KEY" > "$HERMES_API_KEY_FILE"
-  chmod 600 "$HERMES_API_KEY_FILE"
-  echo "[bootstrap] Generated new Hermes API key."
+if [[ -z "${KIA_API_KEY:-}" && -f "$KIA_API_KEY_FILE" ]]; then
+  export KIA_API_KEY="$(cat "$KIA_API_KEY_FILE")"
+  echo "[bootstrap] Loaded stored 0xKia API key."
+fi
+if [[ -z "${KIA_API_KEY:-}" && -f "${HERMES_HOME}/.hermes_api_key" ]]; then
+  export KIA_API_KEY="$(cat "${HERMES_HOME}/.hermes_api_key")"
+  echo "[bootstrap] Loaded stored legacy Hermes API key."
+fi
+if [[ -z "${KIA_API_KEY:-}" ]]; then
+  export KIA_API_KEY="$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
+  echo "$KIA_API_KEY" > "$KIA_API_KEY_FILE"
+  chmod 600 "$KIA_API_KEY_FILE"
+  echo "[bootstrap] Generated new 0xKia API key."
 fi
 
 echo "[bootstrap] Writing runtime env to ${ENV_FILE}"
@@ -276,12 +290,12 @@ for key in \
   WEBHOOK_PORT WEBHOOK_SECRET DEBUG_SKILLS \
   EXPECTED_VENDORED_SKILLS STRICT_VENDORED_SKILLS VENDORED_SKILLS_SOURCE \
   RADIUS_SKILLS_AUTO_UPDATE RADIUS_SKILLS_REPO RADIUS_SKILLS_BRANCH RADIUS_SKILLS_WEBHOOK_SECRET RADIUS_SKILLS_GITHUB_TOKEN RADIUS_SKILLS_DIR RADIUS_SKILLS_SYNC_TIMEOUT_SECONDS RADIUS_SKILLS_BOOTSTRAP_FROM_IMAGE \
-  HERMES_API_KEY HERMES_URL A2A_BRIDGE_MODEL HERMES_TIMEOUT A2A_MODE A2A_PUBLIC_URL A2A_FILE_SERVE_PATHS
+  KIA_API_KEY KIA_URL A2A_BRIDGE_MODEL KIA_TIMEOUT A2A_MODE A2A_PUBLIC_URL A2A_FILE_SERVE_PATHS
 do
   append_if_set "$key"
 done
 
-# Proxy and CA settings so Hermes CLI sessions route the same way. Tokens are
+# Proxy and CA settings so upstream CLI sessions route the same way. Tokens are
 # already covered above; real values never reach this service.
 for key in "${EGRESS_ENV_KEYS[@]}"; do
   if ! grep -q "^${key}=" "$ENV_FILE"; then
@@ -366,7 +380,7 @@ if [[ ! -f "$INIT_MARKER" ]]; then
   date -u +"%Y-%m-%dT%H:%M:%SZ" > "$INIT_MARKER"
   echo "[bootstrap] First-time initialization completed."
 else
-  echo "[bootstrap] Existing Hermes data found. Skipping one-time init."
+  echo "[bootstrap] Existing 0xKia data found. Skipping one-time init."
 fi
 
 # === Radius CLI: wallet setup ===
@@ -516,7 +530,7 @@ if [[ -n "${BYTEROVER_API_KEY:-}" ]] || is_true "${BYTEROVER_LOCAL:-}"; then
     else
       echo "[bootstrap] ByteRover local mode — skipping cloud authentication."
     fi
-    echo "[bootstrap] Configuring Hermes to use ByteRover memory provider..."
+    echo "[bootstrap] Configuring 0xKia to use ByteRover memory provider..."
     if hermes config set memory.provider byterover; then
       date -u +"%Y-%m-%dT%H:%M:%SZ" > "$BYTEROVER_MARKER"
       echo "[bootstrap] ByteRover memory provider configured."
@@ -630,10 +644,12 @@ else:
 PYEOF
 
 # === shared-workspace hardening: re-applied from env on every boot ===
-# HERMES_DISABLED_TOOLSETS   comma list -> agent.disabled_toolsets (e.g. terminal,file,code_execution); "none" clears it
-# HERMES_BACKGROUND_REVIEW   true|false -> auxiliary.background_review.enabled
-# HERMES_MEMORY_NOTIFICATIONS off|on|verbose -> display.memory_notifications
-if [[ -n "${HERMES_DISABLED_TOOLSETS+x}" || -n "${HERMES_BACKGROUND_REVIEW:-}" || -n "${HERMES_MEMORY_NOTIFICATIONS:-}" ]]; then
+# KIA_DISABLED_TOOLSETS       comma list -> agent.disabled_toolsets (e.g. terminal,file,code_execution); "none" clears it
+# KIA_BACKGROUND_REVIEW       true|false -> auxiliary.background_review.enabled
+# KIA_MEMORY_NOTIFICATIONS    off|on|verbose -> display.memory_notifications
+# (legacy HERMES_* names of the same keys are still accepted)
+if [[ -n "${KIA_DISABLED_TOOLSETS+x}" || -n "${KIA_BACKGROUND_REVIEW:-}" || -n "${KIA_MEMORY_NOTIFICATIONS:-}"
+   || -n "${HERMES_DISABLED_TOOLSETS+x}" || -n "${HERMES_BACKGROUND_REVIEW:-}" || -n "${HERMES_MEMORY_NOTIFICATIONS:-}" ]]; then
   echo "[bootstrap] Applying shared-workspace settings to config.yaml..."
   python3 - <<'PYEOF'
 import os
@@ -655,14 +671,15 @@ def section(name):
         cfg[name] = value
     return value
 
-if "HERMES_DISABLED_TOOLSETS" in os.environ:
+if "KIA_DISABLED_TOOLSETS" in os.environ or "HERMES_DISABLED_TOOLSETS" in os.environ:
     # "none" (or empty) clears the list, re-enabling everything a previous boot disabled.
-    disabled = [t.strip() for t in os.environ["HERMES_DISABLED_TOOLSETS"].split(",")
+    disabled = [t.strip() for t in os.environ.get("KIA_DISABLED_TOOLSETS",
+                os.environ.get("HERMES_DISABLED_TOOLSETS", "")).split(",")
                 if t.strip() and t.strip().lower() != "none"]
     section("agent")["disabled_toolsets"] = disabled
     print(f"[bootstrap] agent.disabled_toolsets = {disabled}")
 
-review = os.environ.get("HERMES_BACKGROUND_REVIEW", "").strip().lower()
+review = os.environ.get("KIA_BACKGROUND_REVIEW", os.environ.get("HERMES_BACKGROUND_REVIEW", "")).strip().lower()
 if review:
     aux = section("auxiliary")
     br = aux.get("background_review") if isinstance(aux.get("background_review"), dict) else {}
@@ -670,7 +687,7 @@ if review:
     aux["background_review"] = br
     print(f"[bootstrap] auxiliary.background_review.enabled = {br['enabled']}")
 
-notifications = os.environ.get("HERMES_MEMORY_NOTIFICATIONS", "").strip().lower()
+notifications = os.environ.get("KIA_MEMORY_NOTIFICATIONS", os.environ.get("HERMES_MEMORY_NOTIFICATIONS", "")).strip().lower()
 if notifications:
     section("display")["memory_notifications"] = notifications
     print(f"[bootstrap] display.memory_notifications = {notifications}")
@@ -681,10 +698,10 @@ PYEOF
 fi
 
 # === Slack experience settings: re-applied from env on every boot ===
-# Each SLACK_* var below writes one Hermes config.yaml key. An unset var leaves
+# Each SLACK_* var below writes one 0xKia config.yaml key. An unset var leaves
 # the key alone unless this block wrote it on an earlier boot, in which case the
 # key is removed, so Railway Variables stay the source of truth. "none" clears a
-# key. Mention, bot and reaction gating are not written here: Hermes reads
+# key. Mention, bot and reaction gating are not written here: the runtime reads
 # SLACK_REQUIRE_MENTION, SLACK_STRICT_MENTION, SLACK_ALLOW_BOTS,
 # SLACK_ALLOWED_CHANNELS and SLACK_REACTION_TRIGGERS from the environment.
 echo "[bootstrap] Applying Slack experience settings to config.yaml..."
@@ -890,22 +907,22 @@ def slack_flag(key):
     return str(raw).strip().lower() in TRUE
 
 
-# Hermes v2026.9.24 posts a natively streamed Slack reply a second time when
+# The upstream runtime v2026.9.24 posts a natively streamed Slack reply a second time when
 # the final text isn't an exact continuation of the stream, and never closes
-# the stream, so "is working" stays up. Fixed upstream in Hermes v0.22.0.
-# Hermes skips native streaming when an unfurl key is set.
+# the stream, so "is working" stays up. Fixed upstream in v0.22.0.
+# The upstream runtime skips native streaming when an unfurl key is set.
 unfurl_set = any(
     isinstance(section, dict) and section.get(key) is not None
     for section in (slack_cfg, slack_extra)
     for key in ("unfurl_links", "unfurl_media")
 )
 if get_path(cfg, SLACK_DISPLAY + ("streaming",)) is True and not unfurl_set:
-    warn("Slack streaming in this Hermes version can post each reply twice and leave an "
-         "'is working' indicator; set SLACK_STREAMING=false until Hermes is upgraded to v0.22.0 or later.")
+    warn("Slack streaming in this upstream runtime version can post each reply twice and leave an "
+         "'is working' indicator; set SLACK_STREAMING=false until it is upgraded to v0.22.0 or later.")
 if slack_flag("feedback_buttons") and not (slack_flag("rich_blocks") or slack_flag("markdown_blocks")):
     warn("Slack feedback buttons need Block Kit replies; set SLACK_RICH_BLOCKS=true or they are not shown.")
 if slack_flag("native_task_cards"):
-    # Same precedence as Hermes: per-platform, legacy override, global, then env.
+    # Same precedence as the runtime: per-platform, legacy override, global, then env.
     progress = next(
         (v for v in (
             get_path(cfg, SLACK_DISPLAY + ("tool_progress",)),
@@ -918,7 +935,7 @@ if slack_flag("native_task_cards"):
     if progress is not None and str(progress).strip().lower() in {"off", "false"}:
         warn("Slack task cards are off while tool progress is explicitly off; unset HERMES_TOOL_PROGRESS_MODE / display.tool_progress or use new/all.")
 
-# Hermes' built-in Slack prompt hint says "tables are NOT supported" whether or
+# The runtime's built-in Slack prompt hint says "tables are NOT supported" whether or
 # not rich_blocks is on. When it is, append the formatting the renderer really
 # supports. Any platform_hints.slack this block didn't write (or that an
 # operator has since edited) is kept.
@@ -935,7 +952,7 @@ BLOCKS_HINT = (
     "payloads, colored sidebars or custom buttons, and a JSON payload in a reply shows up as a "
     "code block. For a card or themed layout, use the slack-card skill."
 )
-# markdown_blocks (Slack's native markdown block) takes precedence in Hermes and
+# markdown_blocks (Slack's native markdown block) takes precedence in the runtime and
 # has different limits, so the note is only for the rich_blocks renderer.
 blocks_on = slack_flag("rich_blocks") and not slack_flag("markdown_blocks")
 current_hint = get_path(cfg, HINT_PATH)
@@ -969,7 +986,7 @@ state_file.write_text(json.dumps(sorted(managed)), encoding="utf-8")
 PYEOF
 
 # === vendored skills: persist Radius external directory and discover skill roots ===
-RADIUS_SKILLS_DIR="${RADIUS_SKILLS_DIR:-/data/.hermes/external-skills/radius-skills}"
+RADIUS_SKILLS_DIR="${RADIUS_SKILLS_DIR:-/data/.0xkia/external-skills/radius-skills}"
 RADIUS_SKILLS_BOOTSTRAP_FROM_IMAGE="${RADIUS_SKILLS_BOOTSTRAP_FROM_IMAGE:-true}"
 radius_skills_snapshot=/app/vendor/radius-skills
 mkdir -p "$(dirname "${RADIUS_SKILLS_DIR}")"
@@ -1070,7 +1087,7 @@ PYEOF
 fi
 
 # === external skill directories: register discovered vendored skill roots in config.yaml ===
-echo "[bootstrap] Registering vendored Radius skill directories as Hermes external skill dirs..."
+echo "[bootstrap] Registering vendored Radius skill directories as 0xKia external skill dirs..."
 python3 - <<'PYEOF'
 import json
 import os
@@ -1111,7 +1128,7 @@ else:
     print('[bootstrap] Vendored external skill dirs already registered.')
 PYEOF
 
-# Install bundled skills into Hermes skills directory
+# Install bundled skills into the 0xKia skills directory
 SKILLS_DIR="${HERMES_HOME}/skills"
 mkdir -p "$SKILLS_DIR"
 for skill_file in /app/skills/*.md; do
@@ -1136,9 +1153,9 @@ for skill_file in /app/skills/*.md; do
   esac
 done
 
-# Vendored Radius marketplace skills are exposed to Hermes via
+# Vendored Radius marketplace skills are exposed to 0xKia via
 # `skills.external_dirs` in config.yaml instead of being copied into the
-# primary Hermes skills directory.
+# primary 0xKia skills directory.
 python3 - <<'PYEOF'
 import json
 import os
@@ -1166,7 +1183,7 @@ for skills_root in manifest.get("roots", []):
     print(f"[bootstrap] External skill directory available: {skills_root}")
 PYEOF
 
-# Install bundled plugins into Hermes plugins directory
+# Install bundled plugins into the 0xKia plugins directory
 PLUGINS_DIR="${HERMES_HOME}/plugins"
 mkdir -p "$PLUGINS_DIR"
 for plugin_dir in /app/plugins/*/; do
@@ -1179,7 +1196,7 @@ done
 
 # GoDaddy surfaces have two independent paths: the remote GoDaddy MCP domain
 # server and the local godaddy-ans plugin. Verify the local plugin can register
-# tools before Hermes gateway starts so missing manifests/imports are visible in
+# tools before the 0xKia gateway starts so missing manifests/imports are visible in
 # deployment logs instead of only as model-side terminal fallbacks.
 STRICT_GODADDY_RUNTIME="${STRICT_GODADDY_RUNTIME:-false}"
 export STRICT_GODADDY_RUNTIME
@@ -1313,8 +1330,8 @@ link_into_workspace() {
 
 link_into_workspace /app/HERMES.md "${MESSAGING_CWD}/HERMES.md" true
 link_into_workspace /app/HERMES.md "${MESSAGING_CWD}/.hermes.md" true
-# Older images also linked a runtime AGENTS.md. Hermes loads only the first
-# context file it finds and HERMES.md wins, so it was never read; drop the link.
+# Older images also linked a runtime AGENTS.md. The upstream runtime loads only
+# the first context file it finds and HERMES.md wins, so it was never read; drop the link.
 if [[ "$(readlink "${MESSAGING_CWD}/AGENTS.md" 2>/dev/null)" == "/app/AGENTS.md" ]]; then
   rm -f "${MESSAGING_CWD}/AGENTS.md"
 fi
@@ -1363,7 +1380,7 @@ if [[ -z "${TELEGRAM_ALLOWED_USERS:-}${DISCORD_ALLOWED_USERS:-}${SLACK_ALLOWED_U
 fi
 
 # Unset integer-typed env vars that are empty or whitespace-only to prevent
-# int() parsing failures in hermes-agent (e.g. HERMES_MAX_ITERATIONS).
+# int() parsing failures in the upstream runtime (e.g. HERMES_MAX_ITERATIONS).
 for key in \
   HERMES_MAX_ITERATIONS HERMES_NOUS_MIN_KEY_TTL_SECONDS \
   CONTEXT_COMPRESSION_THRESHOLD \
@@ -1376,10 +1393,10 @@ for key in \
   fi
 done
 
-# Hermes main can create idx_tasks_session_id before its additive migration
+# The upstream gateway can create idx_tasks_session_id before its additive migration
 # adds tasks.session_id on legacy kanban DBs. Repair existing boards first.
-echo "[bootstrap] Checking Hermes kanban SQLite migrations..."
-python3 - <<'PYEOF' || echo "[bootstrap] WARNING: Hermes kanban migration preflight failed; gateway will continue." >&2
+echo "[bootstrap] Checking 0xKia kanban SQLite migrations..."
+python3 - <<'PYEOF' || echo "[bootstrap] WARNING: 0xKia kanban migration preflight failed; gateway will continue." >&2
 import os
 import sqlite3
 from pathlib import Path
@@ -1393,7 +1410,7 @@ def _candidate_paths() -> list[Path]:
     root = Path(
         os.environ.get("HERMES_KANBAN_HOME")
         or os.environ.get("HERMES_HOME")
-        or "/data/.hermes"
+        or "/data/.0xkia"
     ).expanduser()
     paths = [root / "kanban.db"]
     boards_root = root / "kanban" / "boards"
@@ -1489,9 +1506,9 @@ _wait_for_agent_server() {
 
 _wait_for_agent_server || true
 
-start_hermes_log_forwarders
+start_kia_log_forwarders
 
-echo "[bootstrap] Starting Hermes gateway..."
+echo "[bootstrap] Starting 0xKia gateway..."
 hermes gateway &
 GATEWAY_PID=$!
 
@@ -1509,7 +1526,7 @@ if ! kill -0 "$AGENT_PID" 2>/dev/null; then
 fi
 
 if ! kill -0 "$GATEWAY_PID" 2>/dev/null; then
-  echo "[bootstrap] ERROR: Hermes gateway exited." >&2
+  echo "[bootstrap] ERROR: 0xKia gateway exited." >&2
   status=1
 fi
 

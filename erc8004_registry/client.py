@@ -31,8 +31,8 @@ def _repo_root() -> Path:
 
 
 def _radius_dir() -> Path:
-    hermes_home = os.environ.get("HERMES_HOME", "/data/.hermes")
-    return Path(hermes_home) / ".radius"
+    kia_home = os.environ.get("HERMES_HOME", "/data/.0xkia")
+    return Path(kia_home) / ".radius"
 
 
 def _private_key_file() -> Path:

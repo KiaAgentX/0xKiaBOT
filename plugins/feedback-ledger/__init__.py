@@ -1,7 +1,7 @@
 """Persist Slack 👍/👎 feedback clicks on agent replies and let the agent read them back.
 
-Hermes renders the feedback buttons itself (``slack.feedback_buttons``) and its own
-``hermes_feedback`` action handler only acks and logs the click. This plugin observes the
+The 0xKia runtime renders the feedback buttons itself (``slack.feedback_buttons``) and its
+own ``hermes_feedback`` action handler only acks and logs the click. This plugin observes the
 same click through a slack_bolt *global middleware* added with the public
 ``ctx.register_platform_handler("slack", ...)`` API. Global middleware runs before any
 listener and always hands the request on, so the core handler still acks and logs exactly
@@ -104,12 +104,12 @@ def _excerpt_chars() -> int:
     return _int_env("FEEDBACK_LEDGER_EXCERPT_CHARS", DEFAULT_EXCERPT_CHARS, 0, MAX_EXCERPT_CHARS)
 
 
-def _hermes_home() -> Path:
-    return Path(os.environ.get("HERMES_HOME", "/data/.hermes"))
+def _kia_home() -> Path:
+    return Path(os.environ.get("HERMES_HOME", "/data/.0xkia"))
 
 
 def ledger_path() -> Path:
-    return Path(os.environ.get("FEEDBACK_LEDGER_PATH", "").strip() or _hermes_home() / "feedback" / "ledger.jsonl")
+    return Path(os.environ.get("FEEDBACK_LEDGER_PATH", "").strip() or _kia_home() / "feedback" / "ledger.jsonl")
 
 
 def _rotated(path: Path) -> Path:
@@ -138,16 +138,16 @@ def ts_to_iso(ts) -> str | None:
 
 
 def redact(text: str) -> str:
-    """Hermes' own secret redaction when available (forced on), then this plugin's patterns."""
+    """The runtime's own secret redaction when available (forced on), then this plugin's patterns."""
     try:
         from agent.redact import redact_sensitive_text
         text = redact_sensitive_text(text, force=True, redact_url_credentials=True)
-    except ImportError:  # running outside Hermes: the local patterns still apply
+    except ImportError:  # running outside the runtime: the local patterns still apply
         pass
-    except Exception as err:  # Hermes changed its redactor: keep going on the local patterns, say so once
+    except Exception as err:  # the runtime changed its redactor: keep going on the local patterns, say so once
         if not _redactor_warned:
             _redactor_warned.append(True)
-            logger.warning("[feedback-ledger] Hermes redact_sensitive_text failed (%s); using local patterns only",
+            logger.warning("[feedback-ledger] upstream redact_sensitive_text failed (%s); using local patterns only",
                            type(err).__name__)
     for pattern in _SECRETS:
         text = pattern.sub("[redacted]", text)
@@ -247,13 +247,13 @@ def build_record(body: dict, action: dict, now: datetime | None = None) -> dict 
 
 # --------------------------------------------------------------------------- session mapping
 
-REPLY_WINDOW = 120.0  # seconds between Slack's reply ts and Hermes' stored assistant message
+REPLY_WINDOW = 120.0  # seconds between Slack's reply ts and the runtime's stored assistant message
 
 
 def lookup_session(db: Path, channel: str | None, thread_ts: str | None, message_ts: str) -> dict:
-    """Map a rated reply to the Hermes session that produced it, reading state.db read-only.
+    """Map a rated reply to the 0xKia session that produced it, reading state.db read-only.
 
-    Hermes keys Slack sessions by channel and thread root (``sessions.chat_id`` /
+    The runtime keys Slack sessions by channel and thread root (``sessions.chat_id`` /
     ``sessions.thread_id``) and posts replies into that thread. Candidates are the gateway
     sessions of that channel (and thread, when the reply has one) that were live when the reply
     was posted. The session with an assistant message stored closest to the reply's ts wins
@@ -390,7 +390,7 @@ def process(body: dict, actions: list, path: Path, state_db: Path) -> int:
 def capture(body) -> int:
     """Hand any feedback clicks in ``body`` to a worker thread and return at once.
 
-    Runs inside slack_bolt dispatch *before* Hermes' own feedback listener acks the click
+    Runs inside slack_bolt dispatch *before* the runtime's own feedback listener acks the click
     (bolt's ``next()`` only sets a flag; listeners run after every global middleware returns),
     so it only does a type check and a ``run_in_executor``. Paths are resolved here because
     worker threads do not inherit context. Without a running loop it stores synchronously.
@@ -401,7 +401,7 @@ def capture(body) -> int:
     if not actions:
         return 0
     _bump("clicks_seen", len(actions))
-    args = (body, actions, ledger_path(), _hermes_home() / "state.db")
+    args = (body, actions, ledger_path(), _kia_home() / "state.db")
     try:
         asyncio.get_running_loop().run_in_executor(None, process, *args)
     except RuntimeError:
@@ -653,5 +653,5 @@ def register(ctx):
     elif callable(register_platform_handler):
         register_platform_handler("slack", wire_slack)
     else:
-        logger.warning("[feedback-ledger] this Hermes has no register_platform_handler; "
+        logger.warning("[feedback-ledger] this runtime has no register_platform_handler; "
                        "Slack feedback clicks will not be stored")

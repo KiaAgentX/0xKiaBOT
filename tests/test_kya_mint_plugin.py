@@ -45,9 +45,9 @@ class KyaMintPluginTests(unittest.TestCase):
         cls.tmp = tempfile.mkdtemp(prefix="kya-mint-plugin-")
         cls._prev_home = os.environ.get("HERMES_HOME")
         os.environ["HERMES_HOME"] = cls.tmp
-        os.environ["PUBLIC_URL"] = "https://hermes.example"
+        os.environ["PUBLIC_URL"] = "https://kia.example"
         os.environ["AGENT_PUBLIC_IP"] = "8.8.8.8"
-        os.environ["AGENT_NAME"] = "Test Hermes"
+        os.environ["AGENT_NAME"] = "Test 0xKia"
         kya_verify._KYA_PRIVATE_KEY = None
         kya_verify._KYA_KID = None
         kya_verify._KYA_JWKS = None
@@ -75,9 +75,9 @@ class KyaMintPluginTests(unittest.TestCase):
         self.assertNotIn("error", out, msg=out)
         self.assertEqual(out["header"]["typ"], "kya+jwt")
         self.assertEqual(out["header"]["alg"], "ES256")
-        self.assertEqual(out["payload"]["iss"], "https://hermes.example")
+        self.assertEqual(out["payload"]["iss"], "https://kia.example")
         self.assertEqual(out["payload"]["aud"], "https://peer.example")
-        self.assertEqual(out["payload"]["aid"]["name"], "Test Hermes")
+        self.assertEqual(out["payload"]["aid"]["name"], "Test 0xKia")
         self.assertEqual(out["payload"]["aid"]["creation_ip"], "8.8.8.8")
         # Self-verification ran by default.
         self.assertTrue(out["self_verification"]["ok"])
@@ -127,7 +127,7 @@ class KyaMintPluginTests(unittest.TestCase):
             self.handler(
                 {
                     "audience": "https://peer.example",
-                    "subject": "did:web:hermes.example",
+                    "subject": "did:web:kia.example",
                     "aid_name": "Custom",
                     "aid_creation_ip": "1.1.1.1",
                     "aid_source_ips": ["1.1.1.0/24", "agent.example"],
@@ -138,7 +138,7 @@ class KyaMintPluginTests(unittest.TestCase):
             )
         )
         self.assertNotIn("error", out, msg=out)
-        self.assertEqual(out["payload"]["sub"], "did:web:hermes.example")
+        self.assertEqual(out["payload"]["sub"], "did:web:kia.example")
         self.assertEqual(out["payload"]["aid"]["name"], "Custom")
         self.assertEqual(out["payload"]["aid"]["creation_ip"], "1.1.1.1")
         self.assertEqual(out["payload"]["aid"]["source_ips"], ["1.1.1.0/24", "agent.example"])
@@ -164,7 +164,7 @@ class KyaMintPluginTests(unittest.TestCase):
         with patch.dict(os.environ, {}, clear=True):
             os.environ["HERMES_HOME"] = self.tmp
             os.environ["AGENT_PUBLIC_IP"] = "8.8.8.8"
-            os.environ["AGENT_NAME"] = "Test Hermes"
+            os.environ["AGENT_NAME"] = "Test 0xKia"
             out = json.loads(self.handler({"audience": "https://peer.example"}))
         self.assertIn("error", out)
         self.assertIn("issuer", out["error"].lower())

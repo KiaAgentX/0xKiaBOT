@@ -5,12 +5,12 @@ import { isIP } from 'node:net';
 import { request as httpsRequest } from 'node:https';
 import { createGunzip, createInflate, createBrotliDecompress } from 'node:zlib';
 
-const target = new URL(process.env.HERMES_X402_TARGET);
+const target = new URL(process.env.KIA_X402_TARGET);
 const rpc = new URL('https://rpc.testnet.radiustech.xyz');
 const permitted = new Set([target.origin, rpc.origin]);
 const maxBytes = 1_048_576;
 
-const expectedOffer = JSON.parse(process.env.HERMES_X402_EXPECTED_OFFER || 'null');
+const expectedOffer = JSON.parse(process.env.KIA_X402_EXPECTED_OFFER || 'null');
 if (!expectedOffer || typeof expectedOffer !== 'object' || Array.isArray(expectedOffer)) {
   throw new Error('x402 validated payment offer is required');
 }

@@ -52,10 +52,10 @@ class TokenTests(unittest.TestCase):
         specs = {s.name: s for s in egress.managed_specs({"EGRESS_SECRETS": "SLACK_BOT_TOKEN,SLACK_APP_TOKEN,TELEGRAM_BOT_TOKEN"})}
         bot = egress.proxy_token(SEED.encode(), specs["SLACK_BOT_TOKEN"])
         self.assertEqual(bot, egress.proxy_token(SEED.encode(), specs["SLACK_BOT_TOKEN"]))
-        self.assertTrue(bot.startswith("xoxb-hermes-egress-"))
+        self.assertTrue(bot.startswith("xoxb-0xkia-egress-"))
         self.assertTrue(egress.proxy_token(SEED.encode(), specs["SLACK_APP_TOKEN"]).startswith("xapp-1-"))
         bot_id, _, rest = egress.proxy_token(SEED.encode(), specs["TELEGRAM_BOT_TOKEN"]).partition(":")
-        self.assertTrue(bot_id.isdigit() and len(bot_id) == 10 and rest.startswith("hermes-egress-"))
+        self.assertTrue(bot_id.isdigit() and len(bot_id) == 10 and rest.startswith("0xkia-egress-"))
         self.assertNotEqual(bot, egress.proxy_token(b"t" * 48, specs["SLACK_BOT_TOKEN"]))
 
     def test_short_seed_and_unknown_or_uncovered_names_are_refused(self):
@@ -149,7 +149,7 @@ class AgentSideTests(unittest.TestCase):
         self.assertEqual(result.stdout, "")
         self.assertEqual(oct(out.stat().st_mode & 0o777), "0o600")
         shown = subprocess.run(["bash", "-c", f'source "{out}"; printf "%s" "$SLACK_APP_TOKEN"'], text=True, capture_output=True)
-        self.assertTrue(shown.stdout.startswith("xapp-1-hermes-egress-"))
+        self.assertTrue(shown.stdout.startswith("xapp-1-0xkia-egress-"))
 
 
 class ProxySideTests(unittest.TestCase):
@@ -336,7 +336,7 @@ class LiveIronProxyTests(unittest.TestCase):
 class EntrypointWiringTests(unittest.TestCase):
     def test_role_switch_runs_before_agent_bootstrap(self):
         text = (ROOT / "scripts/entrypoint.sh").read_text()
-        self.assertLess(text.index('HERMES_SERVICE_ROLE:-agent}" == "egress"'), text.index("mkdir -p \"${HERMES_HOME}\""))
+        self.assertLess(text.index('KIA_SERVICE_ROLE:-${HERMES_SERVICE_ROLE:-agent}}" == "egress"'), text.index("mkdir -p \"${HERMES_HOME}\""))
         self.assertLess(text.index("iron_egress.py client-env"), text.index("if ! has_valid_provider_config"))
 
     def test_private_key_never_written_to_env_file(self):

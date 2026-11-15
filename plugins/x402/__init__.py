@@ -61,7 +61,7 @@ def _max_per_call() -> Decimal:
 
 
 def _ledger_path() -> Path:
-    home = Path(os.environ.get("HERMES_HOME", "/data/.hermes"))
+    home = Path(os.environ.get("HERMES_HOME", "/data/.0xkia"))
     return Path(os.environ.get("X402_LEDGER_PATH", str(home / "x402" / "ledger.jsonl")))
 
 
@@ -257,7 +257,7 @@ def _run_radius_cli(args: list[str], target_url: str | None = None, expected_off
     if not executable:
         raise X402Error("installed radius-cli is required")
     env = os.environ.copy()
-    env["RADIUS_HOME"] = os.environ.get("RADIUS_HOME", str(Path(os.environ.get("HERMES_HOME", "/data/.hermes")) / ".radius-cli"))
+    env["RADIUS_HOME"] = os.environ.get("RADIUS_HOME", str(Path(os.environ.get("HERMES_HOME", "/data/.0xkia")) / ".radius-cli"))
     # Signing destination and chain configuration are fixed; ignore ambient overrides.
     for key in ("RADIUS_PRIVATE_KEY", "RADIUS_RPC_URL", "RADIUS_SBC_ADDRESS", "RADIUS_NETWORK", "RADIUS_CHAIN_ID", "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"):
         env.pop(key, None)
@@ -271,8 +271,8 @@ def _run_radius_cli(args: list[str], target_url: str | None = None, expected_off
         if any(c.isspace() for c in guard):
             raise X402Error("payment plugin path cannot contain whitespace")
         env["NODE_OPTIONS"] = "--import=" + guard
-        env["HERMES_X402_TARGET"] = target_url
-        env["HERMES_X402_EXPECTED_OFFER"] = json.dumps(expected_offer, separators=(",", ":"))
+        env["KIA_X402_TARGET"] = target_url
+        env["KIA_X402_EXPECTED_OFFER"] = json.dumps(expected_offer, separators=(",", ":"))
     proc = subprocess.run([executable, *args], input="", text=True, capture_output=True,
                           env=env, timeout=180)
     try:

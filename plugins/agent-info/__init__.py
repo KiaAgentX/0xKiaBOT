@@ -61,7 +61,7 @@ def _fetch_json(url: str):
         url,
         headers={
             "Accept": "application/json, application/did+json, text/plain;q=0.8, */*;q=0.5",
-            "User-Agent": "hermes-agent-info-plugin/1.0",
+            "User-Agent": "0xkia-agent-info-plugin/1.0",
         },
     )
     with urlopen(req, timeout=10) as response:
@@ -75,7 +75,7 @@ def _fetch_text(url: str) -> str:
         url,
         headers={
             "Accept": "text/markdown, text/plain;q=0.9, */*;q=0.5",
-            "User-Agent": "hermes-agent-info-plugin/1.0",
+            "User-Agent": "0xkia-agent-info-plugin/1.0",
         },
     )
     with urlopen(req, timeout=10) as response:

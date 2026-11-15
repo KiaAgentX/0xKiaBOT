@@ -1,6 +1,6 @@
 ---
 name: slack-card
-description: Show or make a card in Slack (wallet card, status card, themed or fancy wallet summary) as markdown that Hermes renders as Block Kit, filled with real values from the wallet tools. Not for explaining Block Kit to developers.
+description: Show or make a card in Slack (wallet card, status card, themed or fancy wallet summary) as markdown that 0xKia renders as Block Kit, filled with real values from the wallet tools. Not for explaining Block Kit to developers.
 ---
 
 # Slack card
@@ -9,9 +9,9 @@ Use this skill when someone asks for a "card", a "themed" or "fancy" summary, a 
 
 ## How Slack formatting works here
 
-You write markdown and Hermes converts it. When your Slack platform note says Block Kit replies are on, `#`/`##` headers become header blocks, `-` lists become real lists, a pipe table becomes a native table, `---` becomes a divider, `>` becomes a quote, and a fenced block becomes a code block. When it doesn't, use the same card but replace the table with one bold label line per row.
+You write markdown and 0xKia converts it. When your Slack platform note says Block Kit replies are on, `#`/`##` headers become header blocks, `-` lists become real lists, a pipe table becomes a native table, `---` becomes a divider, `>` becomes a quote, and a fenced block becomes a code block. When it doesn't, use the same card but replace the table with one bold label line per row.
 
-You cannot send Block Kit JSON yourself. No tool takes it, so a `blocks` or `attachments` payload in your reply shows up as a code block. Colored sidebars and custom buttons aren't available. The only buttons are the 👍/👎 feedback buttons Hermes adds by itself. If someone asks for buttons or a color, build the card anyway and say in one short line that those aren't available.
+You cannot send Block Kit JSON yourself. No tool takes it, so a `blocks` or `attachments` payload in your reply shows up as a code block. Colored sidebars and custom buttons aren't available. The only buttons are the 👍/👎 feedback buttons 0xKia adds by itself. If someone asks for buttons or a color, build the card anyway and say in one short line that those aren't available.
 
 If the user explicitly wants Block Kit JSON to paste into their own Slack app or the Block Kit Builder, give it in a fenced code block and say it's for copying. A request for a card is not a request for JSON.
 

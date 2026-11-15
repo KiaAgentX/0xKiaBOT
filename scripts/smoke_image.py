@@ -13,7 +13,7 @@ os.environ["JWT_API_KEY"] = "isolated-container-smoke-key"
 os.environ["TRUSTED_DIDS"] = ""
 os.environ["AGENT_SERVER_MOCK_DATA"] = "1"
 
-with tempfile.TemporaryDirectory(prefix="radius-hermes-smoke-") as home:
+with tempfile.TemporaryDirectory(prefix="0xkia-smoke-") as home:
     os.environ["HERMES_HOME"] = home
     os.environ["A2A_SESSION_ROOT"] = str(Path(home) / "a2a-sessions")
     from fastapi.testclient import TestClient
@@ -43,8 +43,8 @@ with tempfile.TemporaryDirectory(prefix="radius-hermes-smoke-") as home:
             assert health.status_code == 200, "local token rejected"
             assert health.json()["version"] == VERSION
 
-# plugins/feedback-ledger captures Slack 👍/👎 clicks through these pinned Hermes details. Check them
-# in a clean interpreter (outside /app, whose plugins/ directory would shadow Hermes' package).
+# plugins/feedback-ledger captures Slack 👍/👎 clicks through these pinned upstream details. Check them
+# in a clean interpreter (outside /app, whose plugins/ directory would shadow the upstream package).
 import subprocess
 
 FEEDBACK_CONTRACT = """
@@ -57,7 +57,7 @@ assert element["positive_button"]["value"] == "positive", element
 assert element["negative_button"]["value"] == "negative", element
 """
 contract = subprocess.run([sys.executable, "-c", FEEDBACK_CONTRACT], cwd="/", capture_output=True, text=True)
-assert contract.returncode == 0, "Hermes Slack feedback contract changed; update plugins/feedback-ledger:\n" + contract.stderr
+assert contract.returncode == 0, "Upstream Slack feedback contract changed; update plugins/feedback-ledger:\n" + contract.stderr
 
 # The egress role's rendered config must load in the bundled iron-proxy.
 import socket
@@ -66,10 +66,10 @@ import time
 sys.path.insert(0, "/app/scripts/egress")
 import iron_egress
 
-with tempfile.TemporaryDirectory(prefix="radius-hermes-egress-") as state:
+with tempfile.TemporaryDirectory(prefix="0xkia-egress-") as state:
     cert, key = iron_egress.generate_ca()
     proxy_env = {
-        "PATH": os.environ["PATH"], "HERMES_SERVICE_ROLE": "egress", "EGRESS_STATE_DIR": state,
+        "PATH": os.environ["PATH"], "KIA_SERVICE_ROLE": "egress", "EGRESS_STATE_DIR": state,
         "EGRESS_TOKEN_SEED": "smoke-" * 8, "EGRESS_CA_CERT": cert, "EGRESS_CA_KEY": key,
         "EGRESS_SECRETS": "OPENROUTER_API_KEY,SLACK_BOT_TOKEN,SLACK_APP_TOKEN,TELEGRAM_BOT_TOKEN",
         "OPENROUTER_API_KEY": "fixture", "SLACK_BOT_TOKEN": "fixture", "SLACK_APP_TOKEN": "fixture",

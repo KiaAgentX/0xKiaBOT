@@ -168,7 +168,7 @@ class GoDaddyRuntimeDiscoveryTests(unittest.TestCase):
         self.assertEqual(result["query"]["matched"], 1)
 
     def test_always_loaded_context_names_both_godaddy_surfaces(self) -> None:
-        # Hermes loads only the first context file it finds, and HERMES.md wins.
+        # The upstream runtime loads only the first context file it finds, and HERMES.md wins.
         content = (REPO_ROOT / "HERMES.md").read_text(encoding="utf-8")
 
         for name in (

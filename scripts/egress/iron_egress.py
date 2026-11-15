@@ -3,9 +3,9 @@
 
 Two Railway services run from this one image:
 
-* the agent (``HERMES_SERVICE_ROLE`` unset) holds only opaque proxy tokens and
+* the agent (``KIA_SERVICE_ROLE`` unset) holds only opaque proxy tokens and
   sends all outbound HTTP(S) through the egress service;
-* the egress service (``HERMES_SERVICE_ROLE=egress``) holds the real secrets
+* the egress service (``KIA_SERVICE_ROLE=egress``) holds the real secrets
   and runs iron-proxy, which terminates TLS with a private CA and swaps each
   token for its real value, only on the hosts that secret belongs to.
 
@@ -13,7 +13,7 @@ Real values never enter the agent container, so they are never written to
 ``${HERMES_HOME}/.env`` and a prompt-injected ``printenv`` only finds tokens
 that are worthless outside the private network.
 
-Hermes ships the same idea as ``hermes egress`` for Docker terminal sandboxes,
+The upstream runtime ships the same idea as ``hermes egress`` for Docker terminal sandboxes,
 but there the agent process itself still reads real keys from ``.env``. This
 module splits the trust boundary across services instead.
 
@@ -37,13 +37,13 @@ from typing import Dict, List, Mapping, Optional, Tuple
 
 IRON_PROXY_VERSION = "0.39.0"
 DEFAULT_PORT = 9090
-TOKEN_MARKER = "hermes-egress-"
+TOKEN_MARKER = "0xkia-egress-"
 MIN_SEED_LENGTH = 32
 
 # Refused at connect time even for allowed hosts: loopback, link-local (cloud
 # metadata), RFC1918, IPv6 ULA (Railway's private network is fd12::/16, so the
 # proxy cannot be used to reach sibling services), IPv4-mapped IPv6, CGNAT and
-# the RFC2544 benchmark range. Same list Hermes uses for `hermes egress`.
+# the RFC2544 benchmark range. Same list the upstream `hermes egress` uses.
 DEFAULT_DENY_CIDRS: Tuple[str, ...] = (
     "127.0.0.0/8", "::1/128",
     "169.254.0.0/16", "fe80::/10",
@@ -66,7 +66,7 @@ NOT_INJECTABLE: Dict[str, str] = {
     "RADIUS_PRIVATE_KEY": "used locally for signing, never sent over HTTP",
     "WEBHOOK_SECRET": "verifies inbound webhooks",
     "JWT_API_KEY": "verifies inbound POST /token requests",
-    "HERMES_API_KEY": "authenticates the local A2A bridge",
+    "KIA_API_KEY": "authenticates the local A2A bridge",
 }
 
 
@@ -403,7 +403,7 @@ def generate_ca() -> Tuple[str, str]:
     from cryptography.x509.oid import NameOID
 
     key = ec.generate_private_key(ec.SECP256R1())
-    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "Radius Hermes egress CA")])
+    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "0xKia egress CA")])
     now = datetime.datetime.now(datetime.timezone.utc)
     cert = (
         x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key())
@@ -445,7 +445,7 @@ def main(argv: List[str]) -> int:
             if len(argv) != 3:
                 print("usage: iron_egress.py client-env <exports-file>", file=sys.stderr)
                 return 2
-            state = Path(env.get("EGRESS_STATE_DIR") or Path(env.get("HERMES_HOME", "/data/.hermes")) / "egress")
+            state = Path(env.get("EGRESS_STATE_DIR") or Path(env.get("HERMES_HOME", "/data/.0xkia")) / "egress")
             exports, warnings = client_env(env, state)
             for warning in warnings:
                 print(f"[egress] WARNING: {warning}", file=sys.stderr)

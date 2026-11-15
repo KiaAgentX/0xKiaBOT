@@ -1,19 +1,19 @@
 # Agent Server
 
-The agent server in this directory is the FastAPI layer that exposes the public discovery surface, JWT auth, A2A transport, homepage, and a few internal helper endpoints for the Hermes Railway template.
+The agent server in this directory is the FastAPI layer that exposes the public discovery surface, JWT auth, A2A transport, homepage, and a few internal helper endpoints for the 0xKia Railway template.
 
 ## What lives here
 
 - `main.py`: FastAPI app, discovery endpoints, homepage, `/a2a`, `/token`, health checks, and runtime wiring.
 - `auth.py`: `did:web` identity creation, JWT signing, and JWT verification.
-- `a2a_bridge.py`: direct A2A bridge from JSON-RPC into Hermes chat calls.
+- `a2a_bridge.py`: direct A2A bridge from JSON-RPC into the 0xKia chat backend.
 - `a2a_sessions.py`: managed A2A session persistence and auto-continue behavior.
 - `a2a_render.py`: host-friendly per-turn card rendering for managed sessions.
-- `hermes_client.py`: async Hermes OpenAI-compatible client for direct mode.
+- `kia_client.py`: async 0xKia OpenAI-compatible client for direct mode.
 - `logging_utils.py`: structured JSON logging helpers used by the server.
 - `url_utils.py`: base URL derivation from `PUBLIC_URL` / Railway env.
 - `gen_jwt.py`: local JWT generation helper used by the bundled plugin/tooling.
-- `x402_seller.py`: optional x402 payment gate for `/a2a`. Validates the request and requires a matching facilitator settlement report before invoking Hermes or submitting a webhook. Receipts are attached even if subsequent delivery fails; no automatic refund. Paid request bodies are capped at 1 MiB. Conversations are scoped to the verified payer and cannot drive managed sessions. This opt-in public paid path bypasses DID/KYA requirements; use a dedicated testnet agent with restricted capabilities.
+- `x402_seller.py`: optional x402 payment gate for `/a2a`. Validates the request and requires a matching facilitator settlement report before invoking the 0xKia backend or submitting a webhook. Receipts are attached even if subsequent delivery fails; no automatic refund. Paid request bodies are capped at 1 MiB. Conversations are scoped to the verified payer and cannot drive managed sessions. This opt-in public paid path bypasses DID/KYA requirements; use a dedicated testnet agent with restricted capabilities.
 - `mock-agent-skills.index.json`: sample public skills index for local mock-page previewing.
 
 ## What the server does
@@ -135,9 +135,9 @@ The KYA signing key is intentionally separate from the agent's Radius wallet key
 
 ### Modes
 
-- `A2A_MODE=direct`: `message/send` and `message/stream` are handled inline through the Hermes-compatible chat API.
-- `A2A_MODE=delegated`: requests are handed off to the Hermes webhook route and return submitted-task responses.
-- `A2A_MODE=auto`: direct mode when `HERMES_API_KEY` is configured, otherwise delegated mode.
+- `A2A_MODE=direct`: `message/send` and `message/stream` are handled inline through the 0xKia-compatible chat API.
+- `A2A_MODE=delegated`: requests are handed off to the 0xKia webhook route and return submitted-task responses.
+- `A2A_MODE=auto`: direct mode when `KIA_API_KEY` is configured, otherwise delegated mode.
 
 ### Managed sessions
 
@@ -154,23 +154,23 @@ Managed A2A sessions are persisted under `${HERMES_HOME}/a2a-sessions`. They tra
 | Variable | Description |
 |---|---|
 | `A2A_MODE` | `auto` (default), `direct`, or `delegated` |
-| `HERMES_API_KEY` | Required for direct mode. Falls back to `API_SERVER_KEY` if unset |
-| `HERMES_URL` | Hermes OpenAI-compatible base URL. Defaults to `http://127.0.0.1:8642` |
+| `KIA_API_KEY` | Required for direct mode. Falls back to legacy `HERMES_API_KEY` or `API_SERVER_KEY` if unset |
+| `KIA_URL` | 0xKia OpenAI-compatible base URL. Defaults to `http://127.0.0.1:8642` |
 | `A2A_BRIDGE_MODEL` | Model name used for direct bridge requests. Defaults to `hermes-agent` |
-| `HERMES_TIMEOUT` | Direct bridge timeout in seconds. Defaults to `120` |
+| `KIA_TIMEOUT` | Direct bridge timeout in seconds. Defaults to `120` |
 | `A2A_PUBLIC_URL` | Optional public URL for generated attachment links |
 | `A2A_FILE_SERVE_PATHS` | Optional comma-separated list of file roots allowed for `/files/{path}` serving |
 | `A2A_SESSION_TICK_SECONDS` | Optional poll interval for the managed session worker. Defaults to `2.5` |
 
 ### Delegated webhook bridge
 
-Delegated mode forwards tasks to Hermes's internal webhook server over HMAC-authenticated HTTP.
+Delegated mode forwards tasks to the 0xKia internal webhook server over HMAC-authenticated HTTP.
 
 To enable it:
 
 1. Set `WEBHOOK_SECRET`.
 2. Set `WEBHOOK_ENABLED=true`.
-3. Add an `a2a` route to Hermes `config.yaml`.
+3. Add an `a2a` route to the 0xKia `config.yaml`.
 
 Example route:
 
@@ -190,8 +190,8 @@ platforms:
 | Variable | Description |
 |---|---|
 | `WEBHOOK_SECRET` | HMAC key for delegated webhook auth |
-| `WEBHOOK_ENABLED` | Enables the Hermes webhook server |
-| `WEBHOOK_PORT` | Hermes webhook server port. Defaults to `8644` |
+| `WEBHOOK_ENABLED` | Enables the 0xKia webhook server |
+| `WEBHOOK_PORT` | 0xKia webhook server port. Defaults to `8644` |
 | `JWT_API_KEY` | Enables `POST /token` |
 | `TRUSTED_DIDS` | Comma-separated peer DID allowlist; empty denies external callers |
 | `A2A_PEER_URL` | Pre-configured peer agent URL |
@@ -226,13 +226,13 @@ The repo includes a sample mock file:
 From the repo root:
 
 ```bash
-mkdir -p .hermes-local
+mkdir -p .kia-local
 
 AGENT_SERVER_MOCK_DATA=true \
-HERMES_HOME="$PWD/.hermes-local" \
+HERMES_HOME="$PWD/.kia-local" \
 PUBLIC_URL=http://localhost:3000 \
 PORT=3000 \
-AGENT_NAME="Hermes Agent" \
+AGENT_NAME="0xKia" \
 MOCK_AGENT_SKILLS_INDEX_FILE="$PWD/scripts/agent_server/mock-agent-skills.index.json" \
 python3 -m uvicorn scripts.agent_server.main:app --reload --port 3000
 ```
@@ -257,7 +257,7 @@ Example:
 
 ```bash
 AGENT_SERVER_MOCK_DATA=true \
-HERMES_HOME="$PWD/.hermes-local" \
+HERMES_HOME="$PWD/.kia-local" \
 PUBLIC_URL=http://localhost:3000 \
 MOCK_RADIUS_WALLET_ADDRESS=0x1234...abcd \
 MOCK_RADIUS_SBC_BALANCE=88.42 \
@@ -298,7 +298,7 @@ Local startup notes:
 - Use `python3 -m uvicorn`, not `python -m uvicorn`, for the same reason.
 - Run the command from the repo root. The documented module path and `MOCK_AGENT_SKILLS_INDEX_FILE="$PWD/scripts/agent_server/mock-agent-skills.index.json"` assume that working directory.
 - Keep `MOCK_AGENT_SKILLS_INDEX_FILE` on one physical line when pasting the command. If the path is split across lines, the newline becomes part of the env var value and the homepage will not find the file.
-- Set `HERMES_HOME` to a writable local path such as `"$PWD/.hermes-local"` when running outside Railway. The deployment default is `/data/.hermes`, which is not writable on a typical macOS/Linux host.
+- Set `HERMES_HOME` to a writable local path such as `"$PWD/.hermes-local"` when running outside Railway. The deployment default is `/data/.0xkia`, which is not writable on a typical macOS/Linux host.
 
 ## Skill discovery and publishing
 
@@ -318,7 +318,7 @@ published: true
 ---
 ```
 
-Skills without `published: true` can still be installed for local Hermes use, but they are not served publicly.
+Skills without `published: true` can still be installed for local 0xKia use, but they are not served publicly.
 
 ## Observability
 
@@ -350,7 +350,7 @@ The FastAPI server disables default uvicorn access logs so the structured lines 
 
 | Variable | Description |
 |---|---|
-| `AGENT_NAME` | Display name across discovery endpoints. Defaults to `Hermes Agent` |
+| `AGENT_NAME` | Display name across discovery endpoints. Defaults to `0xKia` |
 | `AGENT_DESCRIPTION` | One-line description published in `agent-card.json` |
 | `AGENT_IMAGE` | Required for ERC-8004 self-registration |
 | `AGENT_SUPPORTED_TRUST` | Required for ERC-8004 self-registration when not passed directly |
@@ -370,7 +370,7 @@ The FastAPI server disables default uvicorn access logs so the structured lines 
 
 | Variable | Description |
 |---|---|
-| `SKILLS_ROOT` | Public well-known skills directory. Defaults to `/data/.hermes/well-known-skills` |
+| `SKILLS_ROOT` | Public well-known skills directory. Defaults to `/data/.0xkia/well-known-skills` |
 | `DEBUG_SKILLS=1` | Enables `/debug/skills` |
 | `EXPECTED_VENDORED_SKILLS` | Optional expected vendored skill names |
 | `STRICT_VENDORED_SKILLS` | Fails boot when expected vendored skills are missing if `true` |
@@ -397,20 +397,20 @@ The FastAPI server disables default uvicorn access logs so the structured lines 
 | `RAILWAY_PUBLIC_DOMAIN` | Used when `PUBLIC_URL` is unset |
 | `RADIUS_PRIVATE_KEY` | Persistent wallet key and signing identity |
 | `RADIUS_WALLET_ADDRESS` | Optional wallet address override for homepage summary |
-| `HERMES_HOME` | Hermes state root. Defaults to `/data/.hermes` |
+| `HERMES_HOME` | 0xKia state root (env var name kept for upstream compatibility). Defaults to `/data/.0xkia` |
 
 ## Runtime behavior in deployment
 
 At deploy time, `scripts/entrypoint.sh` does the surrounding runtime setup that the agent server expects:
 
 1. writes env vars to `${HERMES_HOME}/.env`
-2. creates Hermes config if needed
+2. creates the 0xKia config if needed
 3. initializes the Radius wallet if missing
 4. installs local skills and bundled plugins
-5. scans vendored Radius skills and registers them with Hermes
+5. scans vendored Radius skills and registers them with the 0xKia runtime
 6. copies published skills to `${HERMES_HOME}/well-known-skills/`
 7. starts this FastAPI agent server on `PORT`
-8. starts Hermes log forwarders
+8. starts 0xKia log forwarders
 9. starts `hermes gateway`
 
 ## Troubleshooting
@@ -461,14 +461,14 @@ which python3
 
 ### Startup fails with `Read-only file system: '/data'`
 
-That means `HERMES_HOME` is still using the Railway/container default of `/data/.hermes`.
+That means `HERMES_HOME` is still using the Railway/container default of `/data/.0xkia`.
 
 For local runs, set a writable repo-local path:
 
 ```bash
-mkdir -p .hermes-local
+mkdir -p .kia-local
 
-HERMES_HOME="$PWD/.hermes-local" \
+HERMES_HOME="$PWD/.kia-local" \
 python3 -m uvicorn scripts.agent_server.main:app --reload --port 3000
 ```
 
@@ -481,8 +481,8 @@ Set `JWT_API_KEY` or `JWT_EXCHANGE_KEY`.
 Check:
 
 - `A2A_MODE`
-- `HERMES_API_KEY`
-- `HERMES_URL`
+- `KIA_API_KEY`
+- `KIA_URL`
 
 ### Discovery docs have the wrong base URL
 
@@ -502,7 +502,7 @@ Check:
 - [auth.py](auth.py)
 - [a2a_bridge.py](a2a_bridge.py)
 - [a2a_sessions.py](a2a_sessions.py)
-- [hermes_client.py](hermes_client.py)
+- [kia_client.py](kia_client.py)
 - [mock-agent-skills.index.json](mock-agent-skills.index.json)
 
 KYA tokens prove signed claims from configured issuers, not regulatory compliance or payment settlement. Replay detection is bounded to this process and resets on restart; use one replica and short token lifetimes.

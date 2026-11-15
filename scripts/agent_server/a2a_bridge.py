@@ -1,4 +1,4 @@
-"""Direct A2A bridge for translating A2A JSON-RPC messages to Hermes chat calls."""
+"""Direct A2A bridge for translating A2A JSON-RPC messages to 0xKia chat calls."""
 from __future__ import annotations
 
 import time
@@ -8,12 +8,12 @@ from typing import AsyncIterator
 from urllib.parse import quote
 
 from file_utils import allowed_file_paths, detect_file_paths, infer_mime_type, replace_file_paths
-from hermes_client import HermesClient
+from kia_client import KiaClient
 
 
 class A2ABridge:
-    def __init__(self, hermes_client: HermesClient, allowed_roots: list[Path], public_base_url: str):
-        self.hermes_client = hermes_client
+    def __init__(self, kia_client: KiaClient, allowed_roots: list[Path], public_base_url: str):
+        self.kia_client = kia_client
         self.allowed_roots = [root.resolve() for root in allowed_roots if root.exists()]
         self.public_base_url = public_base_url.rstrip("/")
 
@@ -67,7 +67,7 @@ class A2ABridge:
 
         context_id = self.context_id(message)
         task_id = str(uuid.uuid4())
-        output = await self.hermes_client.complete(
+        output = await self.kia_client.complete(
             messages=[{"role": "user", "content": user_text}],
             session_id=context_id,
         )
@@ -95,7 +95,7 @@ class A2ABridge:
 
         context_id = self.context_id(message)
         full_text = ""
-        async for chunk in self.hermes_client.stream(
+        async for chunk in self.kia_client.stream(
             messages=[{"role": "user", "content": user_text}],
             session_id=context_id,
         ):

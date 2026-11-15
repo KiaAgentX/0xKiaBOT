@@ -8,6 +8,6 @@ a2a-sdk==0.3.24
 PyYAML==6.0.3
 requests==2.33.0
 ruamel.yaml==0.18.17
-# Match the pinned Hermes runtime and its HTTP parser compatibility bound.
+# Match the pinned hermes-agent runtime (0xKia upstream) and its HTTP parser compatibility bound.
 pydantic==2.13.4
 httptools==0.8.0

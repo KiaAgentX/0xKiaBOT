@@ -73,7 +73,7 @@ def _default_subject() -> str | None:
 
 
 def _default_agent_name() -> str:
-    return (os.environ.get("AGENT_NAME") or "Hermes Agent").strip() or "Hermes Agent"
+    return (os.environ.get("AGENT_NAME") or "0xKia").strip() or "0xKia"
 
 
 def _default_creation_ip() -> str | None:
@@ -144,7 +144,7 @@ def register(ctx):
                 },
                 "aid_name": {
                     "type": "string",
-                    "description": "aid.name — agent's display/business name. Defaults to AGENT_NAME env or 'Hermes Agent'.",
+                    "description": "aid.name — agent's display/business name. Defaults to AGENT_NAME env or '0xKia'.",
                 },
                 "aid_creation_ip": {
                     "type": "string",

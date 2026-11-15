@@ -1,9 +1,9 @@
 # Telegram + OpenRouter with the egress proxy: the real OpenRouter key and bot
 # token live only in the egress pod's Secret.
 #
-#   kubectl create secret generic hermes-agent \
+#   kubectl create secret generic 0xkia-agent \
 #     --from-literal=EGRESS_TOKEN_SEED=... --from-file=EGRESS_CA_CERT=ca.crt
-#   kubectl create secret generic hermes-egress \
+#   kubectl create secret generic 0xkia-egress \
 #     --from-literal=EGRESS_TOKEN_SEED=... --from-file=EGRESS_CA_CERT=ca.crt \
 #     --from-file=EGRESS_CA_KEY=ca.key \
 #     --from-literal=OPENROUTER_API_KEY=sk-or-v1-... \
@@ -11,12 +11,12 @@
 #
 # Generate the CA and seed with: python3 scripts/egress/iron_egress.py gen-ca
 agent:
-  existingSecret: hermes-agent
+  existingSecret: 0xkia-agent
   config:
     TELEGRAM_ALLOWED_USERS: "123456789"
 egress:
   enabled: true
-  existingSecret: hermes-egress
+  existingSecret: 0xkia-egress
   secrets:
     - OPENROUTER_API_KEY
     - TELEGRAM_BOT_TOKEN

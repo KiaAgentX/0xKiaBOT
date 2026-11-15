@@ -2,10 +2,10 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: {{ include "hermes.fullname" . }}-test-discovery
+  name: {{ include "0xkia.fullname" . }}-test-discovery
   labels:
-    {{- include "hermes.labels" . | nindent 4 }}
-    {{- include "hermes.selectorLabels" (dict "root" . "component" "test") | nindent 4 }}
+    {{- include "0xkia.labels" . | nindent 4 }}
+    {{- include "0xkia.selectorLabels" (dict "root" . "component" "test") | nindent 4 }}
   annotations:
     helm.sh/hook: test
     helm.sh/hook-delete-policy: before-hook-creation
@@ -26,7 +26,7 @@ spec:
   containers:
     - name: discovery
       # The agent image already has Python; no extra image to pull or trust.
-      image: {{ include "hermes.image" . }}
+      image: {{ include "0xkia.image" . }}
       imagePullPolicy: {{ .Values.image.pullPolicy }}
       securityContext:
         allowPrivilegeEscalation: false
@@ -35,7 +35,7 @@ spec:
           drop: [ALL]
       env:
         - name: BASE
-          value: {{ printf "http://%s:%d" (include "hermes.fullname" .) (int .Values.service.port) | quote }}
+          value: {{ printf "http://%s:%d" (include "0xkia.fullname" .) (int .Values.service.port) | quote }}
       command:
         - python3
         - -c

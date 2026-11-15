@@ -323,7 +323,7 @@ def register(ctx):
         schema={
             "name": "erc8004_register_self",
             "description": (
-                "Build a default ERC-8004 registration for the current Hermes agent using "
+                "Build a default ERC-8004 registration for the current 0xKia agent using "
                 "the current runtime URLs plus supplied operator metadata, then submit it. "
                 "If required metadata is missing, ask follow-up questions or configure the "
                 "matching AGENT_* env vars before calling."

@@ -109,7 +109,7 @@ class PaymentBoundaryTests(unittest.TestCase):
         context.wrap_socket.assert_called_once_with(wire, server_hostname='seller.example')
 
     def test_dry_run_and_bad_body_or_headers_do_not_sign(self):
-        for extra in [{'dry_run': 'true'}, {'body': '@/data/.hermes/.env'}, {'body': '-'}, {'headers': {'Host': 'localhost'}}, {'headers': {'x': 'a\r\nb'}}]:
+        for extra in [{'dry_run': 'true'}, {'body': '@/data/.0xkia/.env'}, {'body': '-'}, {'headers': {'Host': 'localhost'}}, {'headers': {'x': 'a\r\nb'}}]:
             with self.subTest(extra=extra), patch.object(x, '_send') as send:
                 self.assertEqual(x.x402_request({**self.params, **extra})['outcome'], 'error')
                 send.assert_not_called()
@@ -315,8 +315,8 @@ https.request = (url, options, callback) => {
 };
 syncBuiltinESMExports();
 globalThis.fetch = () => { throw new Error('native fetch must never resolve the hostname again'); };
-process.env.HERMES_X402_TARGET = 'https://seller.example/paid';
-process.env.HERMES_X402_EXPECTED_OFFER = JSON.stringify({scheme:'exact', network:'eip155:72344'});
+process.env.KIA_X402_TARGET = 'https://seller.example/paid';
+process.env.KIA_X402_EXPECTED_OFFER = JSON.stringify({scheme:'exact', network:'eip155:72344'});
 (async () => {
   await import(process.argv[1]);
   const response = await fetch('https://seller.example/paid');
@@ -337,7 +337,7 @@ process.env.HERMES_X402_EXPECTED_OFFER = JSON.stringify({scheme:'exact', network
         with patch.dict(os.environ, {'RADIUS_CLI_BIN': '/installed/radius-cli'}), \
                 patch.object(x.subprocess, 'run', return_value=result) as run:
             x._run_radius_cli(['--json'], target_url=self.params['url'], expected_offer=offer())
-        self.assertEqual(json.loads(run.call_args.kwargs['env']['HERMES_X402_EXPECTED_OFFER']), offer())
+        self.assertEqual(json.loads(run.call_args.kwargs['env']['KIA_X402_EXPECTED_OFFER']), offer())
         self.assertIn('fetch-guard.mjs', run.call_args.kwargs['env']['NODE_OPTIONS'])
         with patch.dict(os.environ, {'RADIUS_CLI_BIN': '/installed/radius-cli'}), \
                 patch.object(x.subprocess, 'run') as run:
@@ -377,8 +377,8 @@ https.request = (_url, _options, callback) => {
   return req;
 };
 syncBuiltinESMExports();
-process.env.HERMES_X402_TARGET = 'https://seller.example/paid';
-process.env.HERMES_X402_EXPECTED_OFFER = JSON.stringify(expected);
+process.env.KIA_X402_TARGET = 'https://seller.example/paid';
+process.env.KIA_X402_EXPECTED_OFFER = JSON.stringify(expected);
 async function cliFlow() {
   await fetch('https://seller.example/paid'); // CLI cannot reach its signer until this succeeds.
   signed++;

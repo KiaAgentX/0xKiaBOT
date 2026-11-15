@@ -23,12 +23,12 @@ class GoDaddyAnsBootstrapTests(unittest.TestCase):
             "https://api.ote-godaddy.com",
         )
 
-    def test_build_registration_bundle_uses_hermes_a2a_and_optional_mcp(self) -> None:
+    def test_build_registration_bundle_uses_kia_a2a_and_optional_mcp(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             env = {
                 "HERMES_HOME": tmpdir,
                 "PUBLIC_URL": "https://agent.example.com",
-                "AGENT_NAME": "Radius Hermes",
+                "AGENT_NAME": "Radius 0xKia",
                 "AGENT_DESCRIPTION": "Agent description",
                 "AGENT_MCP_ENDPOINT": "https://agent.example.com/mcp",
                 "GODADDY_ANS_INCLUDE_MCP": "true",
@@ -37,7 +37,7 @@ class GoDaddyAnsBootstrapTests(unittest.TestCase):
             result = ans.build_registration_bundle(env=env)
 
         payload = result["payload"]
-        self.assertEqual(payload["agentDisplayName"], "Radius Hermes")
+        self.assertEqual(payload["agentDisplayName"], "Radius 0xKia")
         self.assertEqual(payload["agentHost"], "agent.example.com")
         self.assertEqual(payload["version"], "1.0.0")
         self.assertEqual(len(payload["endpoints"]), 2)
@@ -65,7 +65,7 @@ class GoDaddyAnsBootstrapTests(unittest.TestCase):
             env = {
                 "HERMES_HOME": tmpdir,
                 "PUBLIC_URL": "https://agent.example.com",
-                "AGENT_NAME": "Radius Hermes",
+                "AGENT_NAME": "Radius 0xKia",
             }
             result = ans.build_registration_bundle(env=env)
 
@@ -120,7 +120,7 @@ class GoDaddyAnsBootstrapTests(unittest.TestCase):
             env = {
                 "HERMES_HOME": tmpdir,
                 "PUBLIC_URL": "https://agent.example.com",
-                "AGENT_NAME": "Radius Hermes",
+                "AGENT_NAME": "Radius 0xKia",
                 "GODADDY_ANS_INCLUDE_MCP": "false",
             }
             result = ans.build_registration_bundle(env=env)

@@ -1,4 +1,4 @@
-"""GoDaddy ANS helper utilities for this Hermes template."""
+"""GoDaddy ANS helper utilities for this 0xKia template."""
 from __future__ import annotations
 
 import argparse
@@ -59,9 +59,9 @@ def _is_true(value: Any, default: bool = False) -> bool:
     return str(value).strip().lower() in {"1", "on", "yes", "true"}
 
 
-def _hermes_home(env: Mapping[str, str] | None = None) -> Path:
+def _kia_home(env: Mapping[str, str] | None = None) -> Path:
     current_env = _env(env)
-    return Path(current_env.get("HERMES_HOME", "/data/.hermes")).expanduser().resolve()
+    return Path(current_env.get("HERMES_HOME", "/data/.0xkia")).expanduser().resolve()
 
 
 def _state_dir(
@@ -70,7 +70,7 @@ def _state_dir(
 ) -> Path:
     if state_dir:
         return Path(state_dir).expanduser().resolve()
-    return (_hermes_home(env) / DEFAULT_ANS_STATE_DIR).resolve()
+    return (_kia_home(env) / DEFAULT_ANS_STATE_DIR).resolve()
 
 
 def _normalized_base_url(env: Mapping[str, str] | None = None) -> str:
@@ -180,7 +180,7 @@ def _normalized_transport(value: str) -> str:
 
 
 def _public_skill_functions(env: Mapping[str, str] | None = None) -> list[dict[str, str]]:
-    skills_root = _hermes_home(env) / "well-known-skills"
+    skills_root = _kia_home(env) / "well-known-skills"
     if not skills_root.exists():
         return []
 
@@ -551,7 +551,7 @@ def build_registration_bundle(
     display_name = (
         current_env.get("GODADDY_ANS_DISPLAY_NAME", "").strip()
         or current_env.get("AGENT_NAME", "").strip()
-        or "Hermes Agent"
+        or "0xKia"
     )[:MAX_AGENT_DISPLAY_NAME_LENGTH]
     version = _registration_version(current_env)
     description = (

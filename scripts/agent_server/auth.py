@@ -333,7 +333,7 @@ async def issue_token(sub: str, expires_in: int = 86400) -> str:
 
 
 async def issue_outbound_token(
-    sub: str = "hermes", expires_in: int = 86400, *, audience: Optional[str] = None,
+    sub: str = "0xkia", expires_in: int = 86400, *, audience: Optional[str] = None,
 ) -> str:
     """Issue a peer-facing JWT that cannot authorize requests back to this agent.
 

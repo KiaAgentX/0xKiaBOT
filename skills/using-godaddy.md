@@ -300,7 +300,7 @@ Events:
 # Call godaddy_ans_prepare_registration with desired params and state_dir
 
 # 2. Inspect the payload
-DIR="/data/.hermes/godaddy/ans"
+DIR="/data/.0xkia/godaddy/ans"
 jq . "$DIR/registration-payload.json"
 
 # Confirm:
@@ -321,7 +321,7 @@ openssl req -in "$DIR/server.csr.pem" -noout -text | grep -A3 "Subject Alternati
 # Call godaddy_ans_register with the same params/state_dir after dry-run validation passes
 
 # 6. If PENDING_VALIDATION, complete HTTP-01 or DNS-01
-HERMES_HOME="${HERMES_HOME:-/data/.hermes}"
+HERMES_HOME="${HERMES_HOME:-/data/.0xkia}"
 mkdir -p "$HERMES_HOME/acme-challenges"
 echo -n '<keyAuthorization>' > "$HERMES_HOME/acme-challenges/<token>"
 curl http://localhost:8080/.well-known/acme-challenge/<token>

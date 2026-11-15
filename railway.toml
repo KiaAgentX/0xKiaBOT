@@ -7,6 +7,6 @@ restartPolicyType = "on_failure"
 requiredMountPath = "/data"
 
 [variables]
-HERMES_HOME = "/data/.hermes"
+HERMES_HOME = "/data/.0xkia"
 HOME = "/data"
 MESSAGING_CWD = "/data/workspace"

@@ -92,7 +92,7 @@ class AuthTests(unittest.IsolatedAsyncioTestCase):
         for token in (
             await auth.issue_outbound_token(),
             await auth.issue_outbound_token(audience=auth.get_did()),
-            auth._create_jwt("hermes", auth.get_did(), auth._private_key),
+            auth._create_jwt("0xkia", auth.get_did(), auth._private_key),
         ):
             with self.subTest(token=token), self.assertRaises(HTTPException):
                 await self.authenticate(token)

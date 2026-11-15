@@ -1,6 +1,6 @@
 """KYA / PAY / KYA-PAY token verification plugin.
 
-Thin Hermes wrapper around ``scripts/agent_server/kya_verify.py`` — that
+Thin 0xKia wrapper around ``scripts/agent_server/kya_verify.py`` — that
 module owns the actual JWKS-fetch, signature verification, claim-shape
 enforcement, and replay tracking, so the same logic is used by:
 

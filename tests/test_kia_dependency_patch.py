@@ -5,10 +5,10 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts.patch_hermes_dependencies import apply, MANIFEST
+from scripts.patch_kia_dependencies import apply, MANIFEST
 
 
-class HermesDependencyPatchTests(unittest.TestCase):
+class KiaDependencyPatchTests(unittest.TestCase):
     def test_reviewed_override_preserves_other_dependencies_and_records_source_hashes(self):
         original = b'[project]\ndependencies = ["PyJWT[crypto]==2.13.0", "requests==2.33.0"]\n'
         with tempfile.TemporaryDirectory() as directory:
@@ -22,7 +22,7 @@ class HermesDependencyPatchTests(unittest.TestCase):
             self.assertEqual(manifest["after_sha256"], hashlib.sha256(source.read_bytes()).hexdigest())
             self.assertEqual(json.loads((root / MANIFEST).read_text()), manifest)
             self.assertEqual(manifest["patch_sha256"], hashlib.sha256((root / manifest["patch_file"]).read_bytes()).hexdigest())
-            script = Path(__file__).resolve().parents[1] / "scripts/patch_hermes_dependencies.py"
+            script = Path(__file__).resolve().parents[1] / "scripts/patch_kia_dependencies.py"
             self.assertEqual(manifest["patch_script_sha256"], hashlib.sha256(script.read_bytes()).hexdigest())
 
     def test_unexpected_or_duplicate_upstream_pins_are_not_modified(self):

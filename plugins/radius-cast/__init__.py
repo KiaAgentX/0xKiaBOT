@@ -25,9 +25,9 @@ class RadiusCliError(RuntimeError):
 
 
 def _radius_home() -> str:
-    # Keep radius-cli keystore/config under Hermes state so wallet persists across deploys.
-    hermes_home = os.environ.get("HERMES_HOME", "/data/.hermes")
-    return os.environ.get("RADIUS_HOME", str(Path(hermes_home) / ".radius-cli"))
+    # Keep radius-cli keystore/config under 0xKia state so wallet persists across deploys.
+    kia_home = os.environ.get("HERMES_HOME", "/data/.0xkia")
+    return os.environ.get("RADIUS_HOME", str(Path(kia_home) / ".radius-cli"))
 
 
 def _env() -> dict[str, str]:

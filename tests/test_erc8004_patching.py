@@ -12,20 +12,20 @@ from erc8004_registry.constants import RADIUS_TESTNET
 from erc8004_registry.patching import build_ans_pointer_patch, merge_registration_patch
 
 
-RAILWAY_WEB = "https://rad-hermes-railway-template-production.up.railway.app/"
+RAILWAY_WEB = "https://rad-0xkia-bot-production.up.railway.app/"
 RAILWAY_A2A = (
-    "https://rad-hermes-railway-template-production.up.railway.app/"
+    "https://rad-0xkia-bot-production.up.railway.app/"
     ".well-known/agent-card.json"
 )
-RAILWAY_DID = "did:web:rad-hermes-railway-template-production.up.railway.app"
+RAILWAY_DID = "did:web:rad-0xkia-bot-production.up.railway.app"
 
 
 def current_registration() -> dict:
     return {
         "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
-        "name": "Agent 0 (Hermes)",
+        "name": "Agent 0 (0xKia)",
         "description": "Autonomous AI agent on the Radius EVM payment network.",
-        "image": "https://api.dicebear.com/9.x/shapes/svg?seed=agent0-hermes",
+        "image": "https://api.dicebear.com/9.x/shapes/svg?seed=agent0-0xkia",
         "services": [
             {"endpoint": RAILWAY_WEB, "name": "web", "version": "v1"},
             {"endpoint": RAILWAY_A2A, "name": "A2A", "version": "0.3.0"},
@@ -85,7 +85,7 @@ class ERC8004PatchingTests(unittest.TestCase):
         encoded = encode_agent_uri(current_registration())
         self.assertEqual(sanitize_agent_uri(f'"{encoded}"'), encoded)
         decoded = decode_agent_uri(f'"{encoded}"')
-        self.assertEqual(decoded["name"], "Agent 0 (Hermes)")
+        self.assertEqual(decoded["name"], "Agent 0 (0xKia)")
 
     def test_normalize_registration_rejects_missing_required_fields(self) -> None:
         with self.assertRaisesRegex(ValueError, "registration.name is required"):
@@ -192,7 +192,7 @@ class ERC8004PatchingTests(unittest.TestCase):
         self.assertEqual(len(result["items"]), 100)
         self.assertIn("registration", result["items"][0])
         self.assertIn("error", result["items"][1])
-        self.assertEqual(result["items"][2]["registration"]["name"], "Agent 0 (Hermes)")
+        self.assertEqual(result["items"][2]["registration"]["name"], "Agent 0 (0xKia)")
 
 
 if __name__ == "__main__":

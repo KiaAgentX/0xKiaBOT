@@ -1,11 +1,11 @@
-# Radius Hermes Railway Template 0.1.0
+# 0xKia Bot — Railway Template 0.1.0
 
-Deploy a persistent Hermes agent with Radius wallet tools, public discovery,
+Deploy a persistent 0xKia agent with Radius wallet tools, public discovery,
 trusted A2A communication, optional KYA signed claims, and Slack app setup.
 
 - **Know what is running.** The agent card and `/livez` report the template version.
   Release validation builds and checks the container and attaches its dependency
-  inventory. Hermes and the Radius CLI have tested defaults.
+  inventory. The 0xKia runtime and the Radius CLI have tested defaults.
 - **Control remote access.** A2A now requires explicitly trusted peer DIDs by
   default. JWTs must expire, and outbound tokens cannot be replayed against their
   issuer. For upgrades, configure `TRUSTED_DIDS` and exchange fresh local tokens
@@ -20,7 +20,7 @@ trusted A2A communication, optional KYA signed claims, and Slack app setup.
   seller advertisements; paid execution remains limited to Radius Testnet.
 - **Offer optional paid A2A access.** Enable prepaid Radius Testnet requests while
   authenticated peers remain free. Payment admits public callers without DID/KYA,
-  including required KYA modes, to the full configured Hermes backend. Use a
+  including required KYA modes, to the full configured 0xKia backend. Use a
   dedicated deployment with restricted tools and plugins. Payment precedes
   execution; later failures have no automatic refund. See [Paid A2A setup](README.md#paid-a2a-x402-seller)
   for access controls, receipts, and unknown settlement outcomes.
